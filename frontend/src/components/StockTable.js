@@ -20,8 +20,14 @@ export default function StockTable({ data, loading }) {
               <td className="border px-3 py-1">{row.Designation}</td>
               <td className="border px-3 py-1">{row.Depot}</td>
               <td className="border px-3 py-1">{row.NomDepot}</td>
-              <td className="border px-3 py-1 text-green-700 font-medium">{row.TotalEntrees}</td>
-              <td className="border px-3 py-1 text-red-600 font-medium">{row.TotalSorties}</td>
+              {/* <td className="border px-3 py-1 text-green-700 font-medium">{row.TotalEntrees}</td>
+              <td className="border px-3 py-1 text-red-600 font-medium">{row.TotalSorties}</td> */}
+              <td className="border px-3 py-1 text-green-700 font-medium">
+                {row.TotalEntrees === 0 ? '-' : row.TotalEntrees}
+              </td>
+              <td className="border px-3 py-1 text-red-600 font-medium">
+                {row.TotalSorties === 0 ? '-' : row.TotalSorties}
+              </td>
               <td className="border px-3 py-1">{row.Solde}</td>
               <td className="border px-3 py-1 font-semibold">{row.StockFinal}</td>
             </tr>
@@ -32,3 +38,5 @@ export default function StockTable({ data, loading }) {
     </div>
   );
 }
+
+
