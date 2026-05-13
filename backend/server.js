@@ -283,7 +283,7 @@ app.get('/api/stock', async (req, res) => {
       FROM JoursSansMvt s
 
       ORDER BY Article, Depot, [Date]
-      OPTION (MAXRECURSION 366)
+      OPTION (MAXRECURSION 10000)
     `;
 
     const result = await request.query(query);
