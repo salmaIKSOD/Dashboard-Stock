@@ -5,6 +5,8 @@ import {
   Bell,
   UserCircle2,
   TrendingUp,
+  Moon,
+  Sun,
 } from 'lucide-react';
 
 export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
@@ -43,8 +45,19 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
         </div>
       </div>
 
-      {/* ── Droite : notifs + user ── */}
+      {/* ── Droite : thème + notifs + user ── */}
       <div className="flex items-center gap-2 relative">
+
+        {/* Theme Icon */}
+        <button
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-all"
+        >
+          {/* Change juste l'icône selon le thème */}
+          <Moon size={17} />
+
+          {/* Exemple mode clair */}
+          {/* <Sun size={17} /> */}
+        </button>
 
         {/* Notifications */}
         <div className="relative">
@@ -117,3 +130,4 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
     </header>
   );
 }
+
