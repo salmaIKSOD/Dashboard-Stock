@@ -1,48 +1,362 @@
-export default function StockTable({ data, loading }) {
-  if (loading) return <p className="text-center text-gray-500 mt-8 text-sm md:text-base">Chargement...</p>;
-  if (!data.length) return <p className="text-center text-gray-400 mt-8 text-sm md:text-base">Aucune donnée.</p>;
+import React, { useMemo, useState, useEffect } from 'react';
+import {
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  PackageX,
+  Download,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+} from 'lucide-react';
 
+// ── Formatteurs ──────────────────────────────────────────────
+const fmtDate = (d) => {
+  if (!d) return '—';
+  const date = new Date(d);
+  return date.toLocaleDateString('fr-FR', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+  });
+};
+
+const fmtNum = (n) => {
+  if (n === null || n === undefined || n === '') return '—';
+  const num = Number(n);
+  if (isNaN(num)) return '—';
+  return new Intl.NumberFormat('fr-FR', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(num);
+};
+
+// ── Détecte automatiquement les noms de colonnes réels ───────
+// Affiche les clés dans la console pour debug
+function detectColumns(data) {
+  if (!data || data.length === 0) return {};
+  const keys = Object.keys(data[0]);
+  console.log('📋 Colonnes reçues du backend:', keys);
+
+  // Cherche la première clé qui correspond à l'une des variantes (insensible à la casse)
+  const find = (...variants) =>
+    keys.find(k =>
+      variants.some(v => k.toLowerCase().replace(/\s/g, '') === v.toLowerCase().replace(/\s/g, ''))
+    ) || null;
+
+  return {
+    date:       find('Date', 'DateJour', 'datejour'),
+    article:    find('Article', 'AR_Ref', 'arref'),
+    design:     find('Designation', 'AR_Design', 'ardesign', 'Désignation'),
+    catN1:      find('CatN1', 'Cat N1', 'CL_Intitule1', 'clintitule1'),
+    depot:      find('Depot', 'DE_No', 'deno'),
+    nomDepot:   find('NomDepot', 'Nom Depot', 'DE_Intitule', 'deintitule', 'NomDepot'),
+    entrees:    find('TotalEntrees', 'Total Entrees', 'TotalEntree', 'totalentree'),
+    sorties:    find('TotalSorties', 'Total Sorties', 'TotalSortie', 'totalsortie'),
+    stockFinal: find('StockFinal', 'Stock Final', 'stockfinal'),
+  };
+}
+
+// ── Badge Stock ──────────────────────────────────────────────
+function StockBadge({ value }) {
+  if (value === null || value === undefined || value === '') {
+    return <span className="text-white/20">—</span>;
+  }
+  const v = Number(value);
+  if (isNaN(v)) return <span className="text-white/20">—</span>;
+  if (v > 0) return (
+    <span className="inline-flex items-center gap-1 text-emerald-400 font-semibold">
+      <TrendingUp size={11} /> {fmtNum(v)}
+    </span>
+  );
+  if (v < 0) return (
+    <span className="inline-flex items-center gap-1 text-red-400 font-semibold">
+      <TrendingDown size={11} /> {fmtNum(v)}
+    </span>
+  );
   return (
-    <div className="overflow-x-auto -mx-4 md:mx-0">
-      <div className="inline-block min-w-full align-middle">
-        <div className="overflow-hidden shadow sm:rounded-lg">
-          <table className="min-w-full text-xs md:text-sm border-collapse">
-            <thead>
-              <tr className="bg-gray-100 text-gray-600 text-left">
-                <th className="border px-2 md:px-3 py-2 whitespace-nowrap">Date</th>
-                <th className="border px-2 md:px-3 py-2 whitespace-nowrap">Article</th>
-                <th className="border px-2 md:px-3 py-2 whitespace-nowrap hidden sm:table-cell">Désignation</th>
-                <th className="border px-2 md:px-3 py-2 whitespace-nowrap">Dépôt</th>
-                <th className="border px-2 md:px-3 py-2 whitespace-nowrap hidden lg:table-cell">Nom Dépôt</th>
-                <th className="border px-2 md:px-3 py-2 whitespace-nowrap">Entrées</th>
-                <th className="border px-2 md:px-3 py-2 whitespace-nowrap">Sorties</th>
-                <th className="border px-2 md:px-3 py-2 whitespace-nowrap hidden md:table-cell">Solde</th>
-                <th className="border px-2 md:px-3 py-2 whitespace-nowrap">Stock Final</th>
-               </tr>
-            </thead>
-            <tbody>
-              {data.map((row, i) => (
-                <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="border px-2 md:px-3 py-1.5 whitespace-nowrap">{row.Date?.slice(0,10)}</td>
-                  <td className="border px-2 md:px-3 py-1.5 whitespace-nowrap">{row.Article}</td>
-                  <td className="border px-2 md:px-3 py-1.5 hidden sm:table-cell">{row.Designation}</td>
-                  <td className="border px-2 md:px-3 py-1.5 whitespace-nowrap">{row.Depot}</td>
-                  <td className="border px-2 md:px-3 py-1.5 hidden lg:table-cell">{row.NomDepot}</td>
-                  <td className="border px-2 md:px-3 py-1.5 text-green-700 font-medium whitespace-nowrap">
-                    {row.TotalEntrees === 0 ? '-' : row.TotalEntrees}
-                  </td>
-                  <td className="border px-2 md:px-3 py-1.5 text-red-600 font-medium whitespace-nowrap">
-                    {row.TotalSorties === 0 ? '-' : row.TotalSorties}
-                  </td>
-                  <td className="border px-2 md:px-3 py-1.5 hidden md:table-cell">{row.Solde}</td>
-                  <td className="border px-2 md:px-3 py-1.5 font-semibold whitespace-nowrap">{row.StockFinal}</td>
-                 </tr>
-              ))}
-            </tbody>
-          </table>
+    <span className="inline-flex items-center gap-1 text-white/30">
+      <Minus size={11} /> 0
+    </span>
+  );
+}
+
+// ── En-tête triable ───────────────────────────────────────────
+function Th({ label, colKey, sortKey, sortDir, onSort }) {
+  const active = sortKey === colKey;
+  return (
+    <th
+      onClick={() => colKey && onSort(colKey)}
+      className="px-4 py-3 text-left cursor-pointer select-none group whitespace-nowrap"
+    >
+      <div className="flex items-center gap-1.5">
+        <span className={`text-[11px] font-semibold uppercase tracking-wider transition-colors
+          ${active ? 'text-sky-400' : 'text-white/30 group-hover:text-white/60'}`}>
+          {label}
+        </span>
+        {colKey && (
+          <span className="text-white/20 group-hover:text-white/40 transition-colors">
+            {active
+              ? (sortDir === 'asc'
+                  ? <ArrowUp size={11} className="text-sky-400" />
+                  : <ArrowDown size={11} className="text-sky-400" />)
+              : <ArrowUpDown size={11} />
+            }
+          </span>
+        )}
+      </div>
+    </th>
+  );
+}
+
+// ── Export CSV ────────────────────────────────────────────────
+function exportCSV(data, cols) {
+  const headers = [
+    'Date', 'Catalogue N1', 'Dépôt', 'Nom Dépôt',
+    'Article', 'Nom Article', 'Total Entrées', 'Total Sorties', 'Stock Final',
+  ];
+  const rows = data.map(r => [
+    fmtDate(r[cols.date]),
+    r[cols.catN1]      ?? '',
+    r[cols.depot]      ?? '',
+    r[cols.nomDepot]   ?? '',
+    r[cols.article]    ?? '',
+    r[cols.design]     ?? '',
+    r[cols.entrees]    ?? 0,
+    r[cols.sorties]    ?? 0,
+    r[cols.stockFinal] ?? 0,
+  ]);
+  const csv = [headers, ...rows]
+    .map(row => row.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';'))
+    .join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `stock_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Composant principal ───────────────────────────────────────
+export default function StockTable({ data, loading }) {
+  const [sortKey, setSortKey] = useState(null);
+  const [sortDir, setSortDir] = useState('asc');
+  const [page,    setPage]    = useState(1);
+  const PAGE_SIZE = 50;
+
+  // Détecte les colonnes une seule fois quand data change
+  const cols = useMemo(() => detectColumns(data), [data]);
+
+  // Reset page quand les données changent
+  useEffect(() => { setPage(1); }, [data]);
+
+  // Tri
+  const sorted = useMemo(() => {
+    if (!data || !data.length) return [];
+    if (!sortKey) return data;
+    return [...data].sort((a, b) => {
+      let av = a[sortKey] ?? '';
+      let bv = b[sortKey] ?? '';
+      const na = Number(av), nb = Number(bv);
+      if (!isNaN(na) && !isNaN(nb)) {
+        return sortDir === 'asc' ? na - nb : nb - na;
+      }
+      return sortDir === 'asc'
+        ? String(av).localeCompare(String(bv), 'fr')
+        : String(bv).localeCompare(String(av), 'fr');
+    });
+  }, [data, sortKey, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const paginated  = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const handleSort = (key) => {
+    if (!key) return;
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortKey(key); setSortDir('asc'); }
+    setPage(1);
+  };
+
+  // ── Loading ───────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="bg-[#131c2e] border border-white/5 rounded-2xl overflow-hidden shadow-xl shadow-black/20">
+        <div className="px-5 py-4 border-b border-white/5 flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
+          <div className="h-3 w-40 bg-white/8 rounded animate-pulse" />
+        </div>
+        <div className="p-5 space-y-2">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="h-10 bg-white/4 rounded-lg animate-pulse"
+              style={{ animationDelay: `${i * 50}ms` }} />
+          ))}
         </div>
       </div>
-      <p className="text-xs text-gray-400 mt-2 px-4 md:px-0">{data.length} lignes</p>
+    );
+  }
+
+  // ── Vide ──────────────────────────────────────────────────
+  if (!data || data.length === 0) {
+    return (
+      <div className="bg-[#131c2e] border border-white/5 rounded-2xl p-16 text-center shadow-xl shadow-black/20">
+        <PackageX size={36} className="text-white/10 mx-auto mb-3" />
+        <p className="text-white/30 text-sm">
+          Aucun résultat — ajustez vos filtres et cliquez sur Filtrer
+        </p>
+      </div>
+    );
+  }
+
+  // ── Tableau ───────────────────────────────────────────────
+  return (
+    <div className="bg-[#131c2e] border border-white/5 rounded-2xl overflow-hidden shadow-xl shadow-black/20">
+
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/5">
+        <div className="flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-emerald-400" />
+          <span className="text-white/60 text-xs font-semibold uppercase tracking-wider">Résultats</span>
+          <span className="bg-white/8 text-white/50 text-[11px] font-mono px-2 py-0.5 rounded-md">
+            {sorted.length.toLocaleString('fr-FR')} lignes
+          </span>
+        </div>
+        <button
+          onClick={() => exportCSV(sorted, cols)}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs
+            bg-white/5 hover:bg-white/10 text-white/40 hover:text-white/70
+            border border-white/8 hover:border-white/15 transition-all"
+        >
+          <Download size={12} />
+          Exporter CSV
+        </button>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="border-b border-white/5 bg-white/2">
+              <Th label="Date"          colKey={cols.date}       sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+              <Th label="Catalogue N1"  colKey={cols.catN1}      sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+              <Th label="Dépôt"         colKey={cols.depot}      sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+              <Th label="Nom Dépôt"     colKey={cols.nomDepot}   sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+              <Th label="Article"       colKey={cols.article}    sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+              <Th label="Nom Article"   colKey={cols.design}     sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+              <Th label="Total Entrées" colKey={cols.entrees}    sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+              <Th label="Total Sorties" colKey={cols.sorties}    sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+              <Th label="Total Sorties" colKey={cols.sorties}    sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+              <Th label="Stock Final"   colKey={cols.stockFinal} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+            </tr>
+          </thead>
+          <tbody>
+            {paginated.map((row, idx) => {
+              const entrees    = Number(row[cols.entrees]    ?? 0);
+              const sorties    = Number(row[cols.sorties]    ?? 0);
+              const stockFinal = row[cols.stockFinal];
+              const hasMvt     = entrees > 0 || sorties > 0;
+
+              return (
+                <tr key={idx}
+                  className={`border-b border-white/3 transition-colors
+                    ${hasMvt ? 'hover:bg-sky-500/4' : 'hover:bg-white/2 opacity-70'}`}
+                >
+                  {/* Date */}
+                  <td className="px-4 py-3 font-mono text-xs text-white/40 whitespace-nowrap">
+                    {fmtDate(row[cols.date])}
+                  </td>
+
+                  {/* Catalogue N1 */}
+                  <td className="px-4 py-3">
+                    {row[cols.catN1]
+                      ? <span className="inline-block bg-indigo-500/10 text-indigo-300 text-[11px] px-2 py-0.5 rounded-md border border-indigo-500/15 whitespace-nowrap">
+                          {row[cols.catN1]}
+                        </span>
+                      : <span className="text-white/15">—</span>
+                    }
+                  </td>
+
+                  {/* Dépôt */}
+                  <td className="px-4 py-3 font-mono text-xs text-white/40">
+                    {row[cols.depot] ?? '—'}
+                  </td>
+
+                  {/* Nom Dépôt */}
+                  <td className="px-4 py-3 text-white/50 text-xs whitespace-nowrap">
+                    {row[cols.nomDepot] ?? '—'}
+                  </td>
+
+                  {/* Article */}
+                  <td className="px-4 py-3 font-mono text-xs text-sky-400/80">
+                    {row[cols.article] ?? '—'}
+                  </td>
+
+                  {/* Nom Article */}
+                  <td className="px-4 py-3 text-white/60 text-xs whitespace-nowrap max-w-[200px] truncate"
+                    title={row[cols.design]}>
+                    {row[cols.design] ?? '—'}
+                  </td>
+
+                  {/* Total Entrées */}
+                  <td className="px-4 py-3 text-right">
+                    {entrees > 0
+                      ? <span className="text-emerald-400 font-semibold">{fmtNum(entrees)}</span>
+                      : <span className="text-white/15 text-xs">—</span>
+                    }
+                  </td>
+
+                  {/* Total Sorties */}
+                  <td className="px-4 py-3 text-right">
+                    {sorties > 0
+                      ? <span className="text-amber-400 font-semibold">{fmtNum(sorties)}</span>
+                      : <span className="text-white/15 text-xs">—</span>
+                    }
+                  </td>
+
+                  {/* Stock Final */}
+                  <td className="px-4 py-3 text-right">
+                    <StockBadge value={stockFinal} />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-5 py-3 border-t border-white/5">
+          <span className="text-white/25 text-xs">
+            Page {page} / {totalPages}
+          </span>
+          <div className="flex items-center gap-1">
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+              className="px-3 py-1.5 rounded-lg text-xs bg-white/5 hover:bg-white/10
+                text-white/40 hover:text-white/70 disabled:opacity-30 disabled:cursor-not-allowed
+                border border-white/8 transition-all">
+              ← Préc.
+            </button>
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const p = Math.max(1, Math.min(totalPages - 4, page - 2)) + i;
+              if (p < 1 || p > totalPages) return null;
+              return (
+                <button key={p} onClick={() => setPage(p)}
+                  className={`w-8 h-8 rounded-lg text-xs transition-all border
+                    ${page === p
+                      ? 'bg-sky-500 border-sky-500 text-white font-semibold'
+                      : 'bg-white/4 border-white/8 text-white/40 hover:bg-white/10 hover:text-white/70'}`}>
+                  {p}
+                </button>
+              );
+            })}
+            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+              className="px-3 py-1.5 rounded-lg text-xs bg-white/5 hover:bg-white/10
+                text-white/40 hover:text-white/70 disabled:opacity-30 disabled:cursor-not-allowed
+                border border-white/8 transition-all">
+              Suiv. →
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

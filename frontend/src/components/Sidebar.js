@@ -1,54 +1,107 @@
-import { useState } from 'react';
+import React from 'react';
+import { LayoutDashboard,
+  PackageSearch,
+  ArrowDownUp,
+  BarChart3,
+  Settings,
+  Building2,
+  ChevronRight,
+} from 'lucide-react';
 
-export default function Sidebar() {
-  const [isOpen, setIsOpen] = useState(false);
+const NAV_ITEMS = [
+  {
+    label: 'Tableau de bord',
+    icon: LayoutDashboard,
+    active: true,
+  },
+  {
+    label: 'Stock journalier',
+    icon: PackageSearch,
+    active: false,
+  },
+  {
+    label: 'Mouvements',
+    icon: ArrowDownUp,
+    active: false,
+  },
+  {
+    label: 'Analyses',
+    icon: BarChart3,
+    active: false,
+  },
+  {
+    label: 'Paramètres',
+    icon: Settings,
+    active: false,
+  },
+];
 
+export default function Sidebar({ open }) {
   return (
-    <>
-      {/* Bouton hamburger pour mobile/tablette */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 bg-gray-800 text-white p-2 rounded-lg shadow-lg"
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          {isOpen ? (
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          ) : (
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          )}
-        </svg>
-      </button>
-
-      {/* Sidebar avec overlay sur mobile */}
-      <div className={`
-        fixed md:relative z-40
-        transform transition-transform duration-300 ease-in-out
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        md:translate-x-0
-        w-64 md:w-48
-        bg-gray-800 text-white h-screen
-        flex flex-col gap-4
-      `}>
-        {/* Espace pour le bouton sur mobile */}
-        <div className="h-16 md:hidden"></div>
-        
-        <h1 className="text-base md:text-lg font-bold border-b border-gray-600 pb-2 px-4 md:px-0">
-          imrasoft SAGE
-        </h1>
-        <nav className="flex flex-col gap-2 text-xs md:text-sm px-4 md:px-0">
-          <a href="#" className="bg-gray-700 rounded px-3 py-2 hover:bg-gray-600 transition-colors">
-            📊 Tableau de bord
-          </a>
-        </nav>
+    <aside
+      className={`
+        fixed top-0 left-0 h-full z-30
+        flex flex-col
+        bg-[#0f1623] border-r border-white/5
+        transition-all duration-300 ease-in-out
+        ${open ? 'w-64' : 'w-0 overflow-hidden'}
+      `}
+    >
+      {/* ── Logo ── */}
+      <div className="flex items-center gap-3 px-6 py-5 border-b border-white/5 shrink-0">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
+          <Building2 size={18} className="text-white" />
+        </div>
+        <div className="leading-tight">
+          <p className="text-white font-semibold text-sm tracking-wide">StockAnalytics</p>
+          <p className="text-white/30 text-[10px] uppercase tracking-widest">SAGE Dashboard</p>
+        </div>
       </div>
 
-      {/* Overlay pour fermer la sidebar sur mobile */}
-      {isOpen && (
-        <div
-          className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
-    </>
+      {/* ── Navigation ── */}
+      <nav className="flex-1 py-4 overflow-y-auto">
+        <p className="px-6 mb-2 text-[10px] font-semibold uppercase tracking-widest text-white/20">
+          Menu
+        </p>
+        <ul className="space-y-0.5 px-3">
+          {NAV_ITEMS.map(({ label, icon: Icon, active }) => (
+            <li key={label}>
+              <button
+                className={`
+                  w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
+                  transition-all duration-150 group
+                  ${active
+                    ? 'bg-sky-500/10 text-sky-400 font-medium'
+                    : 'text-white/40 hover:text-white/80 hover:bg-white/5'
+                  }
+                `}
+              >
+                <Icon
+                  size={16}
+                  className={active ? 'text-sky-400' : 'text-white/30 group-hover:text-white/60'}
+                />
+                <span className="flex-1 text-left">{label}</span>
+                {active && (
+                  <ChevronRight size={14} className="text-sky-400/60" />
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      {/* ── Pied de page ── */}
+      <div className="px-5 py-4 border-t border-white/5 shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
+            AD
+          </div>
+          <div className="leading-tight min-w-0">
+            <p className="text-white/70 text-xs font-medium truncate">Administrateur</p>
+            <p className="text-white/25 text-[10px] truncate">admin@sage.local</p>
+          </div>
+        </div>
+      </div>
+    </aside>
   );
 }
