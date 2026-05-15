@@ -23,6 +23,7 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
 
   return (
     <header className="flex items-center justify-between px-5 py-3 bg-[#0f1623] border-b border-white/5 sticky top-0 z-20">
+      
 
       {/* ── Gauche : hamburger + titre ── */}
       <div className="flex items-center gap-4">

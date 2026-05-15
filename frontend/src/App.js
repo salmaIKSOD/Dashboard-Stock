@@ -221,7 +221,7 @@ export default function App() {
         style={{
           marginLeft:
             sidebarOpen && window.innerWidth >= 1024
-              ? '256px'
+              ? '240px'
               : '0',
         }}
       >
