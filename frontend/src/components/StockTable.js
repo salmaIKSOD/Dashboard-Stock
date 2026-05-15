@@ -30,32 +30,33 @@ const fmtNum = (n) => {
 };
 
 // ── Détecte automatiquement les noms de colonnes réels ───────
-// Affiche les clés dans la console pour debug
 function detectColumns(data) {
   if (!data || data.length === 0) return {};
   const keys = Object.keys(data[0]);
   console.log('📋 Colonnes reçues du backend:', keys);
 
-  // Cherche la première clé qui correspond à l'une des variantes (insensible à la casse)
   const find = (...variants) =>
     keys.find(k =>
-      variants.some(v => k.toLowerCase().replace(/\s/g, '') === v.toLowerCase().replace(/\s/g, ''))
+      variants.some(v =>
+        k.toLowerCase().replace(/[\s_()]/g, '') === v.toLowerCase().replace(/[\s_()]/g, '')
+      )
     ) || null;
 
   return {
     date:       find('Date', 'DateJour', 'datejour'),
-    article:    find('Article', 'AR_Ref', 'arref'),
-    design:     find('Designation', 'AR_Design', 'ardesign', 'Désignation'),
     catN1:      find('CatN1', 'Cat N1', 'CL_Intitule1', 'clintitule1'),
     depot:      find('Depot', 'DE_No', 'deno'),
-    nomDepot:   find('NomDepot', 'Nom Depot', 'DE_Intitule', 'deintitule', 'NomDepot'),
+    nomDepot:   find('NomDepot', 'Nom Depot', 'DE_Intitule', 'deintitule'),
+    article:    find('Article', 'AR_Ref', 'arref'),
+    design:     find('Designation', 'AR_Design', 'ardesign', 'Désignation'),
     entrees:    find('TotalEntrees', 'Total Entrees', 'TotalEntree', 'totalentree'),
     sorties:    find('TotalSorties', 'Total Sorties', 'TotalSortie', 'totalsortie'),
+    solde:      find('ValeurFinalePermanente', 'Valeur Finale (Permanente)', 'ValeurFinale', 'valeurfinale', 'Solde', 'solde'),
     stockFinal: find('StockFinal', 'Stock Final', 'stockfinal'),
   };
 }
 
-// ── Badge Stock ──────────────────────────────────────────────
+// ── Badge Stock Final ────────────────────────────────────────
 function StockBadge({ value }) {
   if (value === null || value === undefined || value === '') {
     return <span className="text-white/20">—</span>;
@@ -111,7 +112,8 @@ function Th({ label, colKey, sortKey, sortDir, onSort }) {
 function exportCSV(data, cols) {
   const headers = [
     'Date', 'Catalogue N1', 'Dépôt', 'Nom Dépôt',
-    'Article', 'Nom Article', 'Total Entrées', 'Total Sorties', 'Stock Final',
+    'Article', 'Nom Article', 'Total Entrées', 'Total Sorties',
+    'Solde', 'Stock Final',
   ];
   const rows = data.map(r => [
     fmtDate(r[cols.date]),
@@ -122,6 +124,7 @@ function exportCSV(data, cols) {
     r[cols.design]     ?? '',
     r[cols.entrees]    ?? 0,
     r[cols.sorties]    ?? 0,
+    r[cols.solde]      ?? 0,
     r[cols.stockFinal] ?? 0,
   ]);
   const csv = [headers, ...rows]
@@ -143,10 +146,8 @@ export default function StockTable({ data, loading }) {
   const [page,    setPage]    = useState(1);
   const PAGE_SIZE = 50;
 
-  // Détecte les colonnes une seule fois quand data change
   const cols = useMemo(() => detectColumns(data), [data]);
 
-  // Reset page quand les données changent
   useEffect(() => { setPage(1); }, [data]);
 
   // Tri
@@ -214,7 +215,9 @@ export default function StockTable({ data, loading }) {
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/5">
         <div className="flex items-center gap-3">
           <div className="w-2 h-2 rounded-full bg-emerald-400" />
-          <span className="text-white/60 text-xs font-semibold uppercase tracking-wider">Résultats</span>
+          <span className="text-white/60 text-xs font-semibold uppercase tracking-wider">
+            Résultats
+          </span>
           <span className="bg-white/8 text-white/50 text-[11px] font-mono px-2 py-0.5 rounded-md">
             {sorted.length.toLocaleString('fr-FR')} lignes
           </span>
@@ -236,23 +239,27 @@ export default function StockTable({ data, loading }) {
           <thead>
             <tr className="border-b border-white/5 bg-white/2">
               <Th label="Date"          colKey={cols.date}       sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-              <Th label="Catalogue N1"  colKey={cols.catN1}      sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+              {/* <Th label="Catalogue N1"  colKey={cols.catN1}      sortKey={sortKey} sortDir={sortDir} onSort={handleSort} /> */}
+              <Th label="Catalogue N1"       />
               <Th label="Dépôt"         colKey={cols.depot}      sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-              <Th label="Nom Dépôt"     colKey={cols.nomDepot}   sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-              <Th label="Article"       colKey={cols.article}    sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-              <Th label="Nom Article"   colKey={cols.design}     sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+              {/* <Th label="Nom Dépôt"     colKey={cols.nomDepot}   sortKey={sortKey} sortDir={sortDir} onSort={handleSort} /> */}
+              <Th label="Nom Dépôt"      />
+              {/* <Th label="Article"       colKey={cols.article}    sortKey={sortKey} sortDir={sortDir} onSort={handleSort} /> */}
+              <Th label="Article"   />
+              {/* <Th label="Nom Article"   colKey={cols.design}     sortKey={sortKey} sortDir={sortDir} onSort={handleSort} /> */}
+              <Th label="Nom Article"   />
               <Th label="Total Entrées" colKey={cols.entrees}    sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
               <Th label="Total Sorties" colKey={cols.sorties}    sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-              <Th label="Total Sorties" colKey={cols.sorties}    sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+              <Th label="Solde"         colKey={cols.solde}      sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
               <Th label="Stock Final"   colKey={cols.stockFinal} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
             </tr>
           </thead>
           <tbody>
             {paginated.map((row, idx) => {
-              const entrees    = Number(row[cols.entrees]    ?? 0);
-              const sorties    = Number(row[cols.sorties]    ?? 0);
-              const stockFinal = row[cols.stockFinal];
-              const hasMvt     = entrees > 0 || sorties > 0;
+              const entrees = Number(row[cols.entrees]    ?? 0);
+              const sorties = Number(row[cols.sorties]    ?? 0);
+              const solde   = Number(row[cols.solde]      ?? 0);
+              const hasMvt  = entrees > 0 || sorties > 0;
 
               return (
                 <tr key={idx}
@@ -311,9 +318,20 @@ export default function StockTable({ data, loading }) {
                     }
                   </td>
 
+                  {/* Solde (Valeur Finale Permanente) */}
+                  <td className="px-4 py-3 text-right">
+                    <span className={`font-semibold text-sm ${
+                      solde > 0 ? 'text-sky-400' :
+                      solde < 0 ? 'text-red-400' :
+                      'text-white/25'
+                    }`}>
+                      {fmtNum(solde)}
+                    </span>
+                  </td>
+
                   {/* Stock Final */}
                   <td className="px-4 py-3 text-right">
-                    <StockBadge value={stockFinal} />
+                    <StockBadge value={row[cols.stockFinal]} />
                   </td>
                 </tr>
               );
@@ -329,12 +347,16 @@ export default function StockTable({ data, loading }) {
             Page {page} / {totalPages}
           </span>
           <div className="flex items-center gap-1">
-            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
               className="px-3 py-1.5 rounded-lg text-xs bg-white/5 hover:bg-white/10
                 text-white/40 hover:text-white/70 disabled:opacity-30 disabled:cursor-not-allowed
-                border border-white/8 transition-all">
+                border border-white/8 transition-all"
+            >
               ← Préc.
             </button>
+
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
               const p = Math.max(1, Math.min(totalPages - 4, page - 2)) + i;
               if (p < 1 || p > totalPages) return null;
@@ -343,15 +365,21 @@ export default function StockTable({ data, loading }) {
                   className={`w-8 h-8 rounded-lg text-xs transition-all border
                     ${page === p
                       ? 'bg-sky-500 border-sky-500 text-white font-semibold'
-                      : 'bg-white/4 border-white/8 text-white/40 hover:bg-white/10 hover:text-white/70'}`}>
+                      : 'bg-white/4 border-white/8 text-white/40 hover:bg-white/10 hover:text-white/70'
+                    }`}
+                >
                   {p}
                 </button>
               );
             })}
-            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
               className="px-3 py-1.5 rounded-lg text-xs bg-white/5 hover:bg-white/10
                 text-white/40 hover:text-white/70 disabled:opacity-30 disabled:cursor-not-allowed
-                border border-white/8 transition-all">
+                border border-white/8 transition-all"
+            >
               Suiv. →
             </button>
           </div>
@@ -360,3 +388,4 @@ export default function StockTable({ data, loading }) {
     </div>
   );
 }
+
