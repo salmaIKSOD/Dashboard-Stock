@@ -309,16 +309,7 @@ export default function StockTable({ data, loading }) {
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', fontSize: '0.875rem', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
           <colgroup>
-            <col style={{ width: '100px' }} /> {/* Date */}
-            <col style={{ width: '120px' }} /> {/* Catalogue N1 */}
-            <col style={{ width: '70px'  }} /> {/* Dépôt */}
-            <col style={{ width: '130px' }} /> {/* Nom Dépôt */}
-            <col style={{ width: '100px' }} /> {/* Article */}
-            <col style={{ width: '180px' }} /> {/* Nom Article */}
-            <col style={{ width: '110px' }} /> {/* Total Entrées */}
-            <col style={{ width: '110px' }} /> {/* Total Sorties */}
-            <col style={{ width: '110px' }} /> {/* Solde */}
-            <col style={{ width: '110px' }} /> {/* Stock Final */}
+            <col style={{width:'100px'}}/><col style={{width:'120px'}}/><col style={{width:'70px'}}/><col style={{width:'130px'}}/><col style={{width:'100px'}}/><col style={{width:'180px'}}/><col style={{width:'110px'}}/><col style={{width:'110px'}}/><col style={{width:'110px'}}/><col style={{width:'110px'}}/>
           </colgroup>
           <thead>
             <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
