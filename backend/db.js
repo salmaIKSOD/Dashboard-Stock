@@ -6,6 +6,9 @@ const config = {
   user: 'sa',
   password: '123456',
   port: 1433,
+  // ajouter deux ligne
+  requestTimeout:    300000,   // 5 minutes par requête
+  connectionTimeout:  30000,   // 30 secondes pour la connexion
   options: {
     encrypt: false,
     trustServerCertificate: true,
