@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Menu,
-  X,
-  Bell,
-  UserCircle2,
-  TrendingUp,
-  Moon,
-} from 'lucide-react';
+import {Menu,X,Bell,UserCircle2,TrendingUp,Moon,} from 'lucide-react';
 
 export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
   const [notifOpen, setNotifOpen] = useState(false);
@@ -20,7 +13,7 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
     year: 'numeric',
   });
 
-  // Largeur de la sidebar (doit correspondre à celle définie dans Sidebar.js)
+  // Largeur de la sidebar (ykon mgad m3a Sidebar.js)
   const SIDEBAR_WIDTH = 240;
 
   // Décalage left dynamique selon l'état de la sidebar
@@ -54,7 +47,7 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
 
   return (
     <>
-      {/* Header fixe */}
+      {/* Header fix */}
       <header style={{
         display: 'flex',
         alignItems: 'center',
