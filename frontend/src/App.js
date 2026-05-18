@@ -20,7 +20,7 @@ function getDefaultDates() {
   };
 }
 
-// ── Sparkline ─────────────────────────────────────────────────
+// ── Sparkline 
 function Sparkline({ data = [], color = '#12a6e0' }) {
   const W = 96, H = 36;
   const pts = data.length >= 2 ? data : [2, 5, 3, 8, 6, 9, 7, 11, 9, 13, 10, 12, 14, 13];
@@ -52,7 +52,7 @@ function Sparkline({ data = [], color = '#12a6e0' }) {
   );
 }
 
-// ── Icônes ────────────────────────────────────────────────────
+// ── Icônes 
 function IconStock() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -81,7 +81,7 @@ function IconSorties() {
   );
 }
 
-// ── Formatteurs ───────────────────────────────────────────────
+// ── Formatteurs 
 const fmtNum = (n) =>
   new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n || 0);
 
@@ -90,7 +90,7 @@ const fmtDate = (d) => {
   return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
-// ── Hook responsive ───────────────────────────────────────────
+// ── Hook responsive 
 function useBreakpoint() {
   const [width, setWidth] = useState(window.innerWidth);
   useEffect(() => {
@@ -106,7 +106,7 @@ function useBreakpoint() {
   };
 }
 
-// ── KPI Card ──────────────────────────────────────────────────
+// ── KPI Card 
 function KpiCard({ title, value, unit, bottomContent, icon, iconBg, iconColor, valueColor, sparkColor, sparkData }) {
   return (
     <div style={{
@@ -150,7 +150,7 @@ function KpiCard({ title, value, unit, bottomContent, icon, iconBg, iconColor, v
   );
 }
 
-// ── KPI Grid responsive ───────────────────────────────────────
+// ── KPI Grid responsive 
 function KpiGrid({ children }) {
   const { isMobile, isTablet } = useBreakpoint();
 
@@ -187,7 +187,7 @@ function KpiGrid({ children }) {
   return <div style={gridStyle}>{children}</div>;
 }
 
-// ── App principal ─────────────────────────────────────────────
+// ── App principal 
 const BASE_PAR_DEFAUT = 'STE_NGDM';
 
 export default function App() {
@@ -213,7 +213,7 @@ const [innerTab, setInnerTab] = useState('dashboard');
     cl_no4:    null,
   });
 
-  // ── Chargement des données ────────────────────────────────
+  // ── Chargement des données
   const loadData = async (params) => {
     setLoading(true);
     setError(null);
@@ -229,13 +229,13 @@ const [innerTab, setInnerTab] = useState('dashboard');
     }
   };
 
-  // ── Chargement automatique au démarrage ───────────────────
+  // ── Chargement automatique au démarrage 
   useEffect(() => {
     loadData(currentFilters);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Responsive sidebar ────────────────────────────────────
+  // ── Responsive sidebar
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 1024) setSidebarOpen(false);
@@ -267,7 +267,7 @@ const [innerTab, setInnerTab] = useState('dashboard');
     await loadData(params);
   };
 
-  // ── Calcul des KPIs ───────────────────────────────────────
+  // ── Calcul des KPIs 
   const kpis = useMemo(() => {
     if (!tableData || tableData.length === 0) return null;
 

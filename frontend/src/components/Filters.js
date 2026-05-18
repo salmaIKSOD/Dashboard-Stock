@@ -10,10 +10,11 @@ import {
   ChevronDown,
   Loader2,
   Check,
+  Tag,
 } from 'lucide-react';
 import { fetchBases, fetchFiltres } from '../api/stockApi';
 
-// ── Composant Select custom ───────────────────────────────────
+// ── Composant Select custom 
 function Select({ label, icon: Icon, value, onChange, options, placeholder, disabled, loading }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -81,6 +82,7 @@ function Select({ label, icon: Icon, value, onChange, options, placeholder, disa
             maxHeight: '220px', overflowY: 'auto',
             scrollbarWidth: 'thin', scrollbarColor: '#e0e0e0 transparent',
           }}>
+            {/* Option vide */}
             <div
               onClick={() => { onChange(''); setOpen(false); }}
               style={{
@@ -129,7 +131,7 @@ function Select({ label, icon: Icon, value, onChange, options, placeholder, disa
   );
 }
 
-// ── Composant Input date ──────────────────────────────────────
+// ── Composant Input date 
 function DateInput({ label, value, onChange, min, max }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -151,7 +153,8 @@ function DateInput({ label, value, onChange, min, max }) {
           width: '100%', background: '#ffffff',
           border: '1px solid #c5c5c5', borderRadius: '0.5rem',
           padding: '0.625rem 0.75rem', fontSize: '0.875rem',
-          color: '#0d0c0c', outline: 'none', transition: 'border-color 0.15s, box-shadow 0.15s',
+          color: '#0d0c0c', outline: 'none',
+          transition: 'border-color 0.15s, box-shadow 0.15s',
           colorScheme: 'light',
         }}
         onFocus={e => { e.target.style.borderColor = '#12a6e0'; e.target.style.boxShadow = '0 0 0 3px rgba(18,166,224,0.12)'; }}
@@ -161,48 +164,49 @@ function DateInput({ label, value, onChange, min, max }) {
   );
 }
 
-// ── Composant principal Filters ───────────────────────────────
-// Props :
-//   onFilter(params | null)  → appelé par Filtrer / Actualiser
-//   initialBase              → base pré-sélectionnée (ex: 'STE_NGDM')
-//   initialDateDebut         → date de début pré-remplie (YYYY-MM-DD)
-//   initialDateFin           → date de fin pré-remplie   (YYYY-MM-DD)
+// ── Composant principal Filters 
 export default function Filters({ onFilter, initialBase = '', initialDateDebut = '', initialDateFin = '' }) {
 
-  const [bases,    setBases]    = useState([]);
-  const [articles, setArticles] = useState([]);
-  const [depots,   setDepots]   = useState([]);
-  const [cat1List, setCat1List] = useState([]);
-  const [cat2List, setCat2List] = useState([]);
-  const [cat3List, setCat3List] = useState([]);
-  const [cat4List, setCat4List] = useState([]);
+  // Listes des options pour chaque dropdown
+  const [bases,      setBases]      = useState([]);
+  const [articles,   setArticles]   = useState([]);
+  const [depots,     setDepots]     = useState([]);
+  const [familles,   setFamilles]   = useState([]);   // ← nouveau
+  const [cat1List,   setCat1List]   = useState([]);
+  const [cat2List,   setCat2List]   = useState([]);
+  const [cat3List,   setCat3List]   = useState([]);
+  const [cat4List,   setCat4List]   = useState([]);
 
-  // Valeurs initialisées avec les props
-  const [base,      setBase]      = useState(initialBase);
-  const [article,   setArticle]   = useState('');
-  const [depot,     setDepot]     = useState('');
-  const [cat1,      setCat1]      = useState('');
-  const [cat2,      setCat2]      = useState('');
-  const [cat3,      setCat3]      = useState('');
-  const [cat4,      setCat4]      = useState('');
-  const [dateDebut, setDateDebut] = useState(initialDateDebut);
-  const [dateFin,   setDateFin]   = useState(initialDateFin);
+  // Valeurs sélectionnées
+  const [base,          setBase]          = useState(initialBase);
+  const [article,       setArticle]       = useState('');
+  const [depot,         setDepot]         = useState('');
+  const [famille,       setFamille]       = useState('');   // ← nouveau (code famille)
+  const [cat1,          setCat1]          = useState('');
+  const [cat2,          setCat2]          = useState('');
+  const [cat3,          setCat3]          = useState('');
+  const [cat4,          setCat4]          = useState('');
+  const [dateDebut,     setDateDebut]     = useState(initialDateDebut);
+  const [dateFin,       setDateFin]       = useState(initialDateFin);
 
   const [loadingBases,   setLoadingBases]   = useState(true);
   const [loadingFiltres, setLoadingFiltres] = useState(false);
   const [isFiltering,    setIsFiltering]    = useState(false);
 
-  const loadFiltres = useCallback(async (selectedBase, selectedCat1 = null) => {
+  // ── Chargement des listes (articles, dépôts, familles, catalogues)
+  const loadFiltres = useCallback(async (selectedBase, selectedCat1 = null, selectedFamille = null) => {
     if (!selectedBase) return;
     setLoadingFiltres(true);
     try {
-      const data = await fetchFiltres(selectedBase, selectedCat1 || null);
-      setArticles((data.articles || []).map(a => ({ value: a.Code, label: `${a.Code} — ${a.Libelle}` })));
-      setDepots  ((data.depots   || []).map(d => ({ value: d.Code, label: d.Libelle })));
-      setCat1List((data.cat1     || []).map(c => ({ value: c.Code, label: c.Libelle })));
-      setCat2List((data.cat2     || []).map(c => ({ value: c.Code, label: c.Libelle })));
-      setCat3List((data.cat3     || []).map(c => ({ value: c.Code, label: c.Libelle })));
-      setCat4List((data.cat4     || []).map(c => ({ value: c.Code, label: c.Libelle })));
+      const data = await fetchFiltres(selectedBase, selectedCat1 , selectedFamille);
+
+      setArticles((data.articles || []).map(a => ({ value: a.Code,  label: `${a.Code} — ${a.Libelle}` })));
+      setDepots  ((data.depots   || []).map(d => ({ value: d.Code,  label: d.Libelle })));
+      setFamilles((data.familles || []).map(f => ({ value: f.Code,  label: `${f.Code} — ${f.Libelle}` }))); // ← nouveau
+      setCat1List((data.cat1     || []).map(c => ({ value: c.Code,  label: c.Libelle })));
+      setCat2List((data.cat2     || []).map(c => ({ value: c.Code,  label: c.Libelle })));
+      setCat3List((data.cat3     || []).map(c => ({ value: c.Code,  label: c.Libelle })));
+      setCat4List((data.cat4     || []).map(c => ({ value: c.Code,  label: c.Libelle })));
     } catch (err) {
       console.error(err);
     } finally {
@@ -210,30 +214,34 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
     }
   }, []);
 
-  // ── Chargement des bases + filtres initiaux au démarrage ──
+  // Chargement des bases au montage
   useEffect(() => {
     fetchBases()
-      .then(data => {
-        setBases(data.map(b => ({ value: b.BaseName, label: b.BaseLabel })));
-      })
+      .then(data => setBases(data.map(b => ({ value: b.BaseName, label: b.BaseLabel }))))
       .catch(console.error)
       .finally(() => setLoadingBases(false));
   }, []);
 
-  // Quand la base initiale est disponible → charger ses filtres
+  // Chargement des filtres quand la base initiale est connue
   useEffect(() => {
-    if (initialBase) {
-      loadFiltres(initialBase);
-    }
+    if (initialBase) loadFiltres(initialBase);
   }, [initialBase, loadFiltres]);
 
+  // ── Handlers ──────
   const handleBaseChange = (val) => {
     setBase(val);
-    setArticle(''); setDepot('');
+    setArticle(''); setDepot(''); setFamille('');
     setCat1(''); setCat2(''); setCat3(''); setCat4('');
-    setArticles([]); setDepots([]);
+    setArticles([]); setDepots([]); setFamilles([]);
     setCat1List([]); setCat2List([]); setCat3List([]); setCat4List([]);
     if (val) loadFiltres(val);
+  };
+
+  // la partie filtrage de la famille
+  const handleFamilleChange = (val) => {
+    setFamille(val);
+    setArticle('');          // reset article
+    if (base) loadFiltres(base, cat1 || null, val || null); 
   };
 
   const handleCat1Change = (val) => {
@@ -249,28 +257,28 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
     try {
       await onFilter({
         base,
-        dateDebut: dateDebut || null,
-        dateFin:   dateFin   || null,
-        depot:     depot     || null,
-        article:   article   || null,
-        cl_no1:    cat1      || null,
-        cl_no2:    cat2      || null,
-        cl_no3:    cat3      || null,
-        cl_no4:    cat4      || null,
+        dateDebut:       dateDebut  || null,
+        dateFin:         dateFin    || null,
+        depot:           depot      || null,
+        article:         article    || null,
+        fa_codefamille:  famille    || null,   // ← envoyé au backend
+        cl_no1:          cat1       || null,
+        cl_no2:          cat2       || null,
+        cl_no3:          cat3       || null,
+        cl_no4:          cat4       || null,
       });
     } finally {
       setIsFiltering(false);
     }
   };
 
-  // Actualiser → réinitialise les filtres optionnels mais garde la base et les dates par défaut
   const handleReset = () => {
     setBase(initialBase);
-    setArticle(''); setDepot('');
+    setArticle(''); setDepot(''); setFamille('');
     setCat1(''); setCat2(''); setCat3(''); setCat4('');
     setDateDebut(initialDateDebut);
     setDateFin(initialDateFin);
-    setArticles([]); setDepots([]);
+    setArticles([]); setDepots([]); setFamilles([]);
     setCat1List([]); setCat2List([]); setCat3List([]); setCat4List([]);
     if (initialBase) loadFiltres(initialBase);
     onFilter(null);
@@ -299,6 +307,7 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
 
+        {/* ── Base SAGE ── */}
         <Select
           label="Base SAGE"
           icon={Database}
@@ -309,6 +318,20 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
           loading={loadingBases}
         />
 
+        {/* ── Famille ── */}
+        <Select
+          label="Famille"
+          icon={Tag}
+          value={famille}
+          onChange={setFamille}
+          options={familles}
+          onChange={handleFamilleChange} 
+          placeholder="Toutes les familles"
+          disabled={!base}
+          loading={loadingFiltres && !familles.length}
+        />
+
+        {/* ── Catalogue N1 ── */}
         <Select
           label="Catalogue Niveau 1"
           icon={Layers}
@@ -320,6 +343,7 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
           loading={loadingFiltres && !cat1List.length}
         />
 
+        {/* ── Catalogue N2 ── */}
         <Select
           label="Catalogue Niveau 2"
           icon={Layers}
@@ -331,6 +355,7 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
           loading={loadingFiltres && !cat2List.length}
         />
 
+        {/* ── Catalogue N3 ── */}
         <Select
           label="Catalogue Niveau 3"
           icon={Layers}
@@ -342,6 +367,7 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
           loading={loadingFiltres && !cat3List.length}
         />
 
+        {/* ── Catalogue N4 ── */}
         <Select
           label="Catalogue Niveau 4"
           icon={Layers}
@@ -353,6 +379,7 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
           loading={loadingFiltres && !cat4List.length}
         />
 
+        {/* ── Article ── */}
         <Select
           label="Article"
           icon={Package}
@@ -364,6 +391,7 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
           loading={loadingFiltres && !articles.length}
         />
 
+        {/* ── Dépôt ── */}
         <Select
           label="Dépôt"
           icon={Warehouse}
@@ -375,6 +403,7 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
           loading={loadingFiltres && !depots.length}
         />
 
+        {/* ── Date début ── */}
         <DateInput
           label="Date début"
           value={dateDebut}
@@ -382,6 +411,7 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
           max={dateFin || undefined}
         />
 
+        {/* ── Date fin ── */}
         <DateInput
           label="Date fin"
           value={dateFin}
@@ -390,7 +420,7 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
         />
       </div>
 
-      {/* Boutons */}
+      {/* ── Boutons ── */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: '0.75rem',
         marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid #f0f0f0',
@@ -432,20 +462,38 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
           Actualiser
         </button>
 
-        {/* Indicateur base active */}
-        {base && (
-          <div style={{
-            marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem',
-            background: 'rgba(1,214,58,0.08)', border: '1px solid rgba(1,214,58,0.25)',
-            borderRadius: '0.5rem', padding: '0.375rem 0.75rem',
-          }}>
+        {/* Indicateur base active + famille si sélectionnée */}
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+
+          {/* Badge famille sélectionnée */}
+          {famille && (
             <div style={{
-              width: '6px', height: '6px', borderRadius: '50%',
-              background: '#01d63a', animation: 'pulse 2s infinite',
-            }} />
-            <span style={{ color: '#01a82e', fontSize: '0.75rem', fontWeight: 500 }}>{base}</span>
-          </div>
-        )}
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              background: 'rgba(124,77,255,0.07)', border: '1px solid rgba(124,77,255,0.20)',
+              borderRadius: '0.5rem', padding: '0.375rem 0.75rem',
+            }}>
+              <Tag size={11} style={{ color: '#7c4dff' }} />
+              <span style={{ color: '#7c4dff', fontSize: '0.75rem', fontWeight: 500 }}>
+                {familles.find(f => f.value === famille)?.label?.split(' — ')[1] || famille}
+              </span>
+            </div>
+          )}
+
+          {/* Badge base active */}
+          {base && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              background: 'rgba(1,214,58,0.08)', border: '1px solid rgba(1,214,58,0.25)',
+              borderRadius: '0.5rem', padding: '0.375rem 0.75rem',
+            }}>
+              <div style={{
+                width: '6px', height: '6px', borderRadius: '50%',
+                background: '#01d63a', animation: 'pulse 2s infinite',
+              }} />
+              <span style={{ color: '#01a82e', fontSize: '0.75rem', fontWeight: 500 }}>{base}</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

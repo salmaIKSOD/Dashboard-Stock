@@ -1,6 +1,6 @@
 const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
-// ── Utilitaire fetch ─────────────────────────────────────────
+// ── Utilitaire fetch 
 async function apiFetch(endpoint, params = {}) {
   const url = new URL(`${BASE_URL}${endpoint}`);
   Object.entries(params).forEach(([k, v]) => {
@@ -16,22 +16,23 @@ async function apiFetch(endpoint, params = {}) {
   return res.json();
 }
 
-// ── Bases SAGE actives ───────────────────────────────────────
+// ── Bases SAGE actives 
 export async function fetchBases() {
   return apiFetch('/bases');
 }
 
-// ── Filtres (articles, dépôts, catalogues) ───────────────────
-export async function fetchFiltres(base, cl_no1 = null) {
-  return apiFetch('/filtres', { base, cl_no1 });
+// ── Filtres (articles, dépôts, catalogues) 
+export async function fetchFiltres(base, cl_no1 = null, fa_codefamille = null) {
+  return apiFetch('/filtres', { base, cl_no1, fa_codefamille });
 }
 
-// ── Mouvements journaliers ───────────────────────────────────
+// ── Mouvements journaliers
 export async function fetchMouvements(params) {
   return apiFetch('/mouvements', params);
 }
 
-// ── Stock journalier (avec jours sans mouvement) ─────────────
+// ── Stock journalier (avec jours sans mouvement)
 export async function fetchStock(params) {
   return apiFetch('/stock', params);
 }
+
