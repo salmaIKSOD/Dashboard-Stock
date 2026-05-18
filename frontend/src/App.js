@@ -5,6 +5,7 @@
 // import StockTable from './components/StockTable';
 // import { fetchStock } from './api/stockApi';
 
+
 // // ── Sparkline Style A — Ligne fine + zone remplie + point final avec halo ──
 // function Sparkline({ data = [], color = '#12a6e0' }) {
 //   const W = 96, H = 36;
@@ -472,14 +473,15 @@
 //     </div>
 //   );
 // }
-
-
 import React, { useEffect, useState, useMemo } from 'react';
 import Sidebar from './components/Sidebar';
 import SidebarP from './components/SidebarP';
 import Filters from './components/Filters';
 import StockTable from './components/StockTable';
 import { fetchStock } from './api/stockApi';
+// App.js — ajout de l'InnerSidebar
+import InnerSidebar from './components/InnerSidebar';
+
 
 // ── Dates par défaut : 1er jour du mois actuel → aujourd'hui ─
 function getDefaultDates() {
@@ -563,6 +565,22 @@ const fmtDate = (d) => {
   return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
+// ── Hook responsive ───────────────────────────────────────────
+function useBreakpoint() {
+  const [width, setWidth] = useState(window.innerWidth);
+  useEffect(() => {
+    const handler = () => setWidth(window.innerWidth);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+  return {
+    isMobile:  width < 640,
+    isTablet:  width >= 640 && width < 1024,
+    isDesktop: width >= 1024,
+    width,
+  };
+}
+
 // ── KPI Card ──────────────────────────────────────────────────
 function KpiCard({ title, value, unit, bottomContent, icon, iconBg, iconColor, valueColor, sparkColor, sparkData }) {
   return (
@@ -607,11 +625,50 @@ function KpiCard({ title, value, unit, bottomContent, icon, iconBg, iconColor, v
   );
 }
 
+// ── KPI Grid responsive ───────────────────────────────────────
+function KpiGrid({ children }) {
+  const { isMobile, isTablet } = useBreakpoint();
+
+  // Mobile  (<640px)  : 1 colonne
+  // Tablette (640–1023px) : 2 colonnes (2+1 centré)
+  // Desktop (≥1024px) : 3 colonnes côte à côte (comportement original)
+  const gridStyle = {
+    display: 'grid',
+    gap: '1rem',
+    gridTemplateColumns: isMobile
+      ? '1fr'
+      : isTablet
+        ? 'repeat(2, 1fr)'
+        : 'repeat(3, 1fr)',
+  };
+
+  // Sur tablette, la 3e card prend toute la largeur (centré)
+  const items = React.Children.toArray(children);
+
+  if (isTablet && items.length === 3) {
+    return (
+      <div style={gridStyle}>
+        {items[0]}
+        {items[1]}
+        <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'center' }}>
+          <div style={{ width: 'calc(50% - 0.5rem)' }}>
+            {items[2]}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return <div style={gridStyle}>{children}</div>;
+}
+
 // ── App principal ─────────────────────────────────────────────
 const BASE_PAR_DEFAUT = 'STE_NGDM';
 
 export default function App() {
 
+  // Dans le state  sidebar inner :
+const [innerTab, setInnerTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024);
   const [tableData,   setTableData]   = useState(null);
   const [loading,     setLoading]     = useState(false);
@@ -666,7 +723,6 @@ export default function App() {
   // ── Appelé par Filters quand l'utilisateur clique Filtrer ─
   const handleFilter = async (params) => {
     if (!params) {
-      // Bouton Actualiser → recharge avec les filtres par défaut
       const defaultParams = {
         base:      BASE_PAR_DEFAUT,
         dateDebut: defaultDebut,
@@ -779,6 +835,10 @@ export default function App() {
           onToggleSidebar={() => setSidebarOpen(o => !o)}
         />
 
+         {/* Layout horizontal : InnerSidebar + contenu */}
+      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+      <InnerSidebar activeKey={innerTab} onSelect={setInnerTab} />
+
         <main style={{
           flex: 1,
           padding: '1.25rem',
@@ -788,7 +848,6 @@ export default function App() {
           overflowX: 'hidden',
         }}>
 
-          {/* Filters reçoit les valeurs initiales pour pré-remplir les champs */}
           <Filters
             onFilter={handleFilter}
             initialBase={BASE_PAR_DEFAUT}
@@ -814,10 +873,9 @@ export default function App() {
             </div>
           )}
 
-          {/* 3 KPI Cards */}
+          {/* ── 3 KPI Cards responsive ── */}
           {kpis && !loading && (
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-
+            <KpiGrid>
               <KpiCard
                 title="Stock total"
                 value={kpis.stockFinalDernierJour}
@@ -893,7 +951,7 @@ export default function App() {
                   </p>
                 }
               />
-            </div>
+            </KpiGrid>
           )}
 
           {/* Tableau */}
@@ -914,7 +972,9 @@ export default function App() {
           )}
 
         </main>
+        </div>
       </div>
     </div>
   );
 }
+
