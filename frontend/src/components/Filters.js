@@ -14,6 +14,23 @@ import {
 } from 'lucide-react';
 import { fetchBases, fetchFiltres } from '../api/stockApi';
 
+// ── Hook responsive ──────────────────────────────────────────────
+function useBreakpoint() {
+  const [width, setWidth] = useState(
+    typeof window !== 'undefined' ? window.innerWidth : 1200
+  );
+  useEffect(() => {
+    const handler = () => setWidth(window.innerWidth);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+  return {
+    isMobile:  width < 640,
+    isTablet:  width >= 640 && width < 1024,
+    isDesktop: width >= 1024,
+  };
+}
+
 // ── Composant Select custom 
 function Select({ label, icon: Icon, value, onChange, options, placeholder, disabled, loading }) {
   const [open, setOpen] = useState(false);
@@ -156,6 +173,7 @@ function DateInput({ label, value, onChange, min, max }) {
           color: '#0d0c0c', outline: 'none',
           transition: 'border-color 0.15s, box-shadow 0.15s',
           colorScheme: 'light',
+          boxSizing: 'border-box',
         }}
         onFocus={e => { e.target.style.borderColor = '#12a6e0'; e.target.style.boxShadow = '0 0 0 3px rgba(18,166,224,0.12)'; }}
         onBlur={e => { e.target.style.borderColor = '#c5c5c5'; e.target.style.boxShadow = 'none'; }}
@@ -166,12 +184,13 @@ function DateInput({ label, value, onChange, min, max }) {
 
 // ── Composant principal Filters 
 export default function Filters({ onFilter, initialBase = '', initialDateDebut = '', initialDateFin = '' }) {
+  const { isMobile, isTablet } = useBreakpoint();
 
   // Listes des options pour chaque dropdown
   const [bases,      setBases]      = useState([]);
   const [articles,   setArticles]   = useState([]);
   const [depots,     setDepots]     = useState([]);
-  const [familles,   setFamilles]   = useState([]);   // ← nouveau
+  const [familles,   setFamilles]   = useState([]);
   const [cat1List,   setCat1List]   = useState([]);
   const [cat2List,   setCat2List]   = useState([]);
   const [cat3List,   setCat3List]   = useState([]);
@@ -181,7 +200,7 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
   const [base,          setBase]          = useState(initialBase);
   const [article,       setArticle]       = useState('');
   const [depot,         setDepot]         = useState('');
-  const [famille,       setFamille]       = useState('');   // ← nouveau (code famille)
+  const [famille,       setFamille]       = useState('');
   const [cat1,          setCat1]          = useState('');
   const [cat2,          setCat2]          = useState('');
   const [cat3,          setCat3]          = useState('');
@@ -193,16 +212,15 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
   const [loadingFiltres, setLoadingFiltres] = useState(false);
   const [isFiltering,    setIsFiltering]    = useState(false);
 
-  // ── Chargement des listes (articles, dépôts, familles, catalogues)
+  // ── Chargement des listes
   const loadFiltres = useCallback(async (selectedBase, selectedCat1 = null, selectedFamille = null) => {
     if (!selectedBase) return;
     setLoadingFiltres(true);
     try {
-      const data = await fetchFiltres(selectedBase, selectedCat1 , selectedFamille);
-
+      const data = await fetchFiltres(selectedBase, selectedCat1, selectedFamille);
       setArticles((data.articles || []).map(a => ({ value: a.Code,  label: `${a.Code} — ${a.Libelle}` })));
       setDepots  ((data.depots   || []).map(d => ({ value: d.Code,  label: d.Libelle })));
-      setFamilles((data.familles || []).map(f => ({ value: f.Code,  label: `${f.Code} — ${f.Libelle}` }))); // ← nouveau
+      setFamilles((data.familles || []).map(f => ({ value: f.Code,  label: `${f.Code} — ${f.Libelle}` })));
       setCat1List((data.cat1     || []).map(c => ({ value: c.Code,  label: c.Libelle })));
       setCat2List((data.cat2     || []).map(c => ({ value: c.Code,  label: c.Libelle })));
       setCat3List((data.cat3     || []).map(c => ({ value: c.Code,  label: c.Libelle })));
@@ -214,7 +232,6 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
     }
   }, []);
 
-  // Chargement des bases au montage
   useEffect(() => {
     fetchBases()
       .then(data => setBases(data.map(b => ({ value: b.BaseName, label: b.BaseLabel }))))
@@ -222,12 +239,11 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
       .finally(() => setLoadingBases(false));
   }, []);
 
-  // Chargement des filtres quand la base initiale est connue
   useEffect(() => {
     if (initialBase) loadFiltres(initialBase);
   }, [initialBase, loadFiltres]);
 
-  // ── Handlers ──────
+  // ── Handlers
   const handleBaseChange = (val) => {
     setBase(val);
     setArticle(''); setDepot(''); setFamille('');
@@ -237,11 +253,10 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
     if (val) loadFiltres(val);
   };
 
-  // la partie filtrage de la famille
   const handleFamilleChange = (val) => {
     setFamille(val);
-    setArticle('');          // reset article
-    if (base) loadFiltres(base, cat1 || null, val || null); 
+    setArticle('');
+    if (base) loadFiltres(base, cat1 || null, val || null);
   };
 
   const handleCat1Change = (val) => {
@@ -261,7 +276,7 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
         dateFin:         dateFin    || null,
         depot:           depot      || null,
         article:         article    || null,
-        fa_codefamille:  famille    || null,   // ← envoyé au backend
+        fa_codefamille:  famille    || null,
         cl_no1:          cat1       || null,
         cl_no2:          cat2       || null,
         cl_no3:          cat3       || null,
@@ -284,6 +299,13 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
     onFilter(null);
   };
 
+  // ── Seul changement : la grille s'adapte selon la taille d'écran
+  const gridCols = isMobile
+    ? '1fr'
+    : isTablet
+    ? 'repeat(2, 1fr)'
+    : 'repeat(auto-fill, minmax(200px, 1fr))';
+
   return (
     <div style={{
       background: '#ffffff', border: '1px solid #e8e8e8',
@@ -291,7 +313,7 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
       boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
     }}>
 
-      {/* Titre */}
+      {/* Titre — identique à l'original */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: '0.5rem',
         marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '1px solid #f0f0f0',
@@ -305,9 +327,9 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
         </span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
+      {/* Grille — responsive uniquement ici */}
+      <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: '1rem' }}>
 
-        {/* ── Base SAGE ── */}
         <Select
           label="Base SAGE"
           icon={Database}
@@ -318,20 +340,17 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
           loading={loadingBases}
         />
 
-        {/* ── Famille ── */}
         <Select
           label="Famille"
           icon={Tag}
           value={famille}
-          onChange={setFamille}
+          onChange={handleFamilleChange}
           options={familles}
-          onChange={handleFamilleChange} 
           placeholder="Toutes les familles"
           disabled={!base}
           loading={loadingFiltres && !familles.length}
         />
 
-        {/* ── Catalogue N1 ── */}
         <Select
           label="Catalogue Niveau 1"
           icon={Layers}
@@ -343,7 +362,6 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
           loading={loadingFiltres && !cat1List.length}
         />
 
-        {/* ── Catalogue N2 ── */}
         <Select
           label="Catalogue Niveau 2"
           icon={Layers}
@@ -355,7 +373,6 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
           loading={loadingFiltres && !cat2List.length}
         />
 
-        {/* ── Catalogue N3 ── */}
         <Select
           label="Catalogue Niveau 3"
           icon={Layers}
@@ -367,7 +384,6 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
           loading={loadingFiltres && !cat3List.length}
         />
 
-        {/* ── Catalogue N4 ── */}
         <Select
           label="Catalogue Niveau 4"
           icon={Layers}
@@ -379,7 +395,6 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
           loading={loadingFiltres && !cat4List.length}
         />
 
-        {/* ── Article ── */}
         <Select
           label="Article"
           icon={Package}
@@ -391,7 +406,6 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
           loading={loadingFiltres && !articles.length}
         />
 
-        {/* ── Dépôt ── */}
         <Select
           label="Dépôt"
           icon={Warehouse}
@@ -403,7 +417,6 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
           loading={loadingFiltres && !depots.length}
         />
 
-        {/* ── Date début ── */}
         <DateInput
           label="Date début"
           value={dateDebut}
@@ -411,7 +424,6 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
           max={dateFin || undefined}
         />
 
-        {/* ── Date fin ── */}
         <DateInput
           label="Date fin"
           value={dateFin}
@@ -420,16 +432,19 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
         />
       </div>
 
-      {/* ── Boutons ── */}
+      {/* Boutons — identiques à l'original, juste flexDirection sur mobile */}
       <div style={{
-        display: 'flex', alignItems: 'center', gap: '0.75rem',
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        alignItems: isMobile ? 'stretch' : 'center',
+        gap: '0.75rem',
         marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid #f0f0f0',
       }}>
         <button
           onClick={handleFilter}
           disabled={!base || isFiltering}
           style={{
-            display: 'flex', alignItems: 'center', gap: '0.5rem',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
             padding: '0.625rem 1.25rem', borderRadius: '0.5rem',
             fontSize: '0.875rem', fontWeight: 500, border: 'none',
             cursor: !base || isFiltering ? 'not-allowed' : 'pointer',
@@ -449,7 +464,7 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
         <button
           onClick={handleReset}
           style={{
-            display: 'flex', alignItems: 'center', gap: '0.5rem',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
             padding: '0.625rem 1.25rem', borderRadius: '0.5rem',
             fontSize: '0.875rem', fontWeight: 500,
             background: '#f5f5f5', color: '#666666',
@@ -462,10 +477,13 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
           Actualiser
         </button>
 
-        {/* Indicateur base active + famille si sélectionnée */}
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        {/* Badges — identiques à l'original */}
+        <div style={{
+          marginLeft: isMobile ? 0 : 'auto',
+          display: 'flex', alignItems: 'center', gap: '0.5rem',
+          flexWrap: 'wrap',
+        }}>
 
-          {/* Badge famille sélectionnée */}
           {famille && (
             <div style={{
               display: 'flex', alignItems: 'center', gap: '0.5rem',
@@ -479,7 +497,6 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
             </div>
           )}
 
-          {/* Badge base active */}
           {base && (
             <div style={{
               display: 'flex', alignItems: 'center', gap: '0.5rem',
