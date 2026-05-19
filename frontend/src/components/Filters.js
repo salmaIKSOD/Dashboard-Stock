@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { fetchBases, fetchFiltres } from '../api/stockApi';
 
-// ── Hook responsive ──────────────────────────────────────────────
+// ── Hook responsive
 function useBreakpoint() {
   const [width, setWidth] = useState(
     typeof window !== 'undefined' ? window.innerWidth : 1200
@@ -33,7 +33,7 @@ function useBreakpoint() {
   };
 }
 
-// ── Select avec portal (design code 2) + logique code 1 ──────────
+// ── Select avec portal (design code 2) + logique code 1 
 function Select({ label, icon: Icon, value, onChange, options, placeholder, disabled, loading }) {
   const [open, setOpen] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState({ top: 0, left: 0, width: 0 });
@@ -377,7 +377,8 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
             <div className="w-7 h-7 rounded-[0.55rem] bg-gradient-to-br from-[#12a6e0] to-[#0d8fc4] flex items-center justify-center shadow-md shadow-[rgba(18,166,224,0.30)]">
               <SlidersHorizontal size={13} className="text-white" />
             </div>
-            <span className="text-[#0d0c0c] text-[13px] font-bold uppercase tracking-[0.07em]">
+            {/* <span className="text-[#0d0c0c] text-[13px] font-bold uppercase tracking-[0.07em]"> */}
+            <span className="text-[#0d0c0c] text-[13px] font-semibold text-sm tracking-wide">
               Filtres de recherche
             </span>
           </div>

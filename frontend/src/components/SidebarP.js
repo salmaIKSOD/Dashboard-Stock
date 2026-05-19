@@ -78,7 +78,7 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <TrendingUp size={16} style={{ color: '#12a6e0' }} />
-            <span style={{ color: '#0d0c0c', fontWeight: 600, fontSize: '0.875rem', letterSpacing: '0.02em' }}>
+            <span style={{ color: '#0d0c0c', fontWeight: 600, fontSize: '0.995rem', letterSpacing: '0.01em' }}>
               Stock Dashboard
             </span>
             <span style={{ color: '#c5c5c5', fontSize: '0.75rem', marginLeft: '0.5rem', fontWeight: 300 }}
