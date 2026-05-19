@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   ArrowUpDown,
   ArrowUp,
@@ -167,6 +167,9 @@ export default function StockTable({ data, loading }) {
   const [page,    setPage]    = useState(1);
   const PAGE_SIZE = 50;
 
+  // ← REF sur le conteneur de la table pour le scroll-to-top
+  const tableTopRef = useRef(null);
+
   const cols = useMemo(() => detectColumns(data), [data]);
 
   useEffect(() => { setPage(1); }, [data]);
@@ -195,6 +198,12 @@ export default function StockTable({ data, loading }) {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
     else { setSortKey(key); setSortDir('asc'); }
     setPage(1);
+  };
+
+  // ← Changement de page + scroll vers le haut de la table
+  const goToPage = (p) => {
+    setPage(p);
+    tableTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   // Loading skeleton
@@ -250,7 +259,8 @@ export default function StockTable({ data, loading }) {
   };
 
   return (
-    <div style={{
+    // ← ref posée ici pour pointer le haut du composant
+    <div ref={tableTopRef} style={{
       background: '#ffffff',
       border: '1px solid #e8e8e8',
       borderRadius: '1rem',
@@ -439,7 +449,7 @@ export default function StockTable({ data, loading }) {
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
+              onClick={() => goToPage(Math.max(1, page - 1))}
               disabled={page === 1}
               style={{ ...pageBtnBase, opacity: page === 1 ? 0.35 : 1, cursor: page === 1 ? 'not-allowed' : 'pointer' }}
               onMouseEnter={e => { if (page !== 1) { e.currentTarget.style.background = '#eaeaea'; e.currentTarget.style.color = '#0d0c0c'; }}}
@@ -452,7 +462,7 @@ export default function StockTable({ data, loading }) {
               const p = Math.max(1, Math.min(totalPages - 4, page - 2)) + i;
               if (p < 1 || p > totalPages) return null;
               return (
-                <button key={p} onClick={() => setPage(p)}
+                <button key={p} onClick={() => goToPage(p)}
                   style={{
                     width: '2rem',
                     height: '2rem',
@@ -472,7 +482,7 @@ export default function StockTable({ data, loading }) {
             })}
 
             <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              onClick={() => goToPage(Math.min(totalPages, page + 1))}
               disabled={page === totalPages}
               style={{ ...pageBtnBase, opacity: page === totalPages ? 0.35 : 1, cursor: page === totalPages ? 'not-allowed' : 'pointer' }}
               onMouseEnter={e => { if (page !== totalPages) { e.currentTarget.style.background = '#eaeaea'; e.currentTarget.style.color = '#0d0c0c'; }}}
@@ -486,5 +496,3 @@ export default function StockTable({ data, loading }) {
     </div>
   );
 }
-
-
