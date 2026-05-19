@@ -12,7 +12,8 @@ import {
   Loader2,
   Check,
   Tag,
-  SlidersHorizontal,
+  Eye
+  // SlidersHorizontal,
 } from 'lucide-react';
 import { fetchBases, fetchFiltres } from '../api/stockApi';
 
@@ -183,28 +184,33 @@ function Select({ label, icon: Icon, value, onChange, options, placeholder, disa
 
 // ── DateInput inline (design code 2) ─────────────────────────
 function DateInputInline({ label, value, onChange, min, max }) {
-  const inputRef = useRef(null);
+  const [focused, setFocused] = useState(false);
+
   return (
     <div className="flex items-center gap-[6px] flex-shrink-0">
       <label className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.07em] text-[#12a6e0] whitespace-nowrap">
         <CalendarDays size={11} />
         {label}
       </label>
-      <div
-        onClick={() => inputRef.current?.showPicker?.()}
-        className="flex items-center gap-[6px] py-[0.35rem] px-[0.65rem] rounded-[0.45rem] border border-[#d8d8d8] bg-[#fafafa] cursor-pointer transition-all duration-150 hover:border-[#12a6e0] hover:bg-white hover:shadow-[0_0_0_3px_rgba(18,166,224,0.10)]"
-      >
-        <input
-          ref={inputRef}
-          type="date"
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          min={min}
-          max={max}
-          className="border-none bg-transparent text-[13px] outline-none cursor-pointer min-w-[130px] w-auto [color-scheme:light]"
-          style={{ color: value ? '#0d0c0c' : '#aaaaaa' }}
-        />
-      </div>
+      <input
+        type="date"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        min={min}
+        max={max}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        className={`
+          py-[0.35rem] px-[0.65rem] rounded-[0.45rem] border bg-[#fafafa]
+          text-[13px] outline-none cursor-pointer min-w-[200px] w-auto
+          transition-all duration-150 [color-scheme:light]
+          ${focused
+            ? 'border-[#12a6e0] shadow-[0_0_0_3px_rgba(18,166,224,0.10)] bg-white'
+            : 'border-[#d8d8d8] hover:border-[#12a6e0] hover:bg-white hover:shadow-[0_0_0_3px_rgba(18,166,224,0.10)]'
+          }
+        `}
+        style={{ color: value ? '#0d0c0c' : '#aaaaaa' }}
+      />
     </div>
   );
 }
@@ -375,7 +381,7 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
         <div className="flex items-center flex-wrap gap-3 px-5 py-4 bg-gradient-to-r from-[#f8fcff] to-[#f0f9ff] border-b border-[#e8f4fb] rounded-[1.1rem] rounded-b-none">
           <div className="flex items-center gap-[0.55rem] flex-shrink-0">
             <div className="w-7 h-7 rounded-[0.55rem] bg-gradient-to-br from-[#12a6e0] to-[#0d8fc4] flex items-center justify-center shadow-md shadow-[rgba(18,166,224,0.30)]">
-              <SlidersHorizontal size={13} className="text-white" />
+              <Eye size={13} className="text-white" />
             </div>
             {/* <span className="text-[#0d0c0c] text-[13px] font-bold uppercase tracking-[0.07em]"> */}
             <span className="text-[#0d0c0c] text-[13px] font-semibold text-sm tracking-wide">
@@ -453,7 +459,7 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
               disabled={!base} 
               loading={loadingFiltres && !cat1List.length} 
             />
-            <Select 
+            {/* <Select 
               label="Catalogue Niveau 2" 
               icon={Layers}    
               value={cat2}    
@@ -492,7 +498,7 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
               placeholder="Tous les articles"         
               disabled={!base} 
               loading={loadingFiltres && !articles.length} 
-            />
+            /> */}
             <Select 
               label="Dépôt"              
               icon={Warehouse} 
