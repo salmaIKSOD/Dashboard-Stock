@@ -9,15 +9,15 @@ import logo from '../images/logo.png';
 
 const NAV_ITEMS = [
   { label: 'Tableau de bord',  path: '/',                icon: LayoutDashboard },
-  { label: 'Stock journalier', path: '/stock-journalier', icon: PackageSearch   },
+  // { label: 'Stock journalier', path: '/stock-journalier', icon: PackageSearch   },
   { label: 'Mouvements',       path: '/mouvements',       icon: ArrowDownUp     },
   { label: 'Articles',         path: '/articles',         icon: Boxes           },
   { label: 'Dépôts',           path: '/depots',           icon: Warehouse       },
-  { label: 'Analyses',         path: '/analyses',         icon: BarChart3       },
-  { label: 'Alertes',          path: '/alertes',          icon: BellRing        },
-  { label: 'AI Prévisions',    path: '/previsions',       icon: BrainCircuit    },
-  { label: 'Rapports',         path: '/rapports',         icon: FileText        },
-  { label: 'Paramètres',       path: '/parametres',       icon: Settings        },
+  // { label: 'Analyses',         path: '/analyses',         icon: BarChart3       },
+  // { label: 'Alertes',          path: '/alertes',          icon: BellRing        },
+  // { label: 'AI Prévisions',    path: '/previsions',       icon: BrainCircuit    },
+  // { label: 'Rapports',         path: '/rapports',         icon: FileText        },
+  // { label: 'Paramètres',       path: '/parametres',       icon: Settings        },
 ];
 
 export default function Sidebar({ open }) {

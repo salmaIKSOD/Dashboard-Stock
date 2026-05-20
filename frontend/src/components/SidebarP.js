@@ -93,13 +93,13 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', position: 'relative' }}>
 
           {/* Theme toggle */}
-          <button
+          {/* <button
             style={btnStyle}
             onMouseEnter={e => { e.currentTarget.style.background = '#f5f5f5'; e.currentTarget.style.color = '#0d0c0c'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#888888'; }}
           >
             <Moon size={17} />
-          </button>
+          </button> */}
 
           {/* Notifications */}
           <div style={{ position: 'relative' }}>
