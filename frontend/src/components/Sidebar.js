@@ -16,15 +16,15 @@ import logo from '../images/logo.png';
 
 const NAV_ITEMS = [
   { label: 'Tableau de bord',  icon: LayoutDashboard, active: true  },
-  // { label: 'Stock journalier', icon: PackageSearch,   active: false },
+  { label: 'Stock journalier', icon: PackageSearch,   active: false },
   { label: 'Mouvements',       icon: ArrowDownUp,     active: false },
   { label: 'Articles',         icon: Boxes,           active: false },
   { label: 'Dépôts',           icon: Warehouse,       active: false },
-  // { label: 'Analyses',         icon: BarChart3,       active: false },
-  // { label: 'Alertes',          icon: BellRing,        active: false },
-  // { label: 'AI Prévisions',    icon: BrainCircuit,    active: false },
-  // { label: 'Rapports',         icon: FileText,        active: false },
-  // { label: 'Paramètres',       icon: Settings,        active: false },
+  { label: 'Analyses',         icon: BarChart3,       active: false },
+  { label: 'Alertes',          icon: BellRing,        active: false },
+  { label: 'AI Prévisions',    icon: BrainCircuit,    active: false },
+  { label: 'Rapports',         icon: FileText,        active: false },
+  { label: 'Paramètres',       icon: Settings,        active: false },
 ];
 
 export default function Sidebar({ open }) {
