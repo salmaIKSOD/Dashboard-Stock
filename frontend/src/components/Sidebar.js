@@ -52,12 +52,12 @@ export default function Sidebar({ open }) {
           alt="StockAnalytics"
           className="w-50 h-50 object-contain"
         />
-        <p
+        {/* <p
           className="text-sm tracking-wide font-semibold"
           style={{ color: '#0d0c0c' }}
         >
           StockAnalytics
-        </p>
+        </p> */}
       </div>
 
       {/* ── Navigation ── */}

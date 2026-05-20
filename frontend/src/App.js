@@ -36,7 +36,7 @@ function Sparkline({ data = [], color = '#12a6e0' }) {
   const fillPath = `${linePath} L ${last.x},${H} L ${first.x},${H} Z`;
   const gradId = `sg-a-${color.replace('#', '')}`;
   return (
-    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} fill="none" style={{ overflow: 'visible' }}>
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} fill="none" className="overflow-visible">
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%"   stopColor={color} stopOpacity="0.18" />
@@ -108,41 +108,40 @@ function useBreakpoint() {
 // ── KPI Card
 function KpiCard({ title, value, unit, bottomContent, icon, iconBg, iconColor, valueColor, sparkColor, sparkData }) {
   return (
-    <div style={{
-      background: '#ffffff',
-      border: '1px solid #eeeeee',
-      borderRadius: '1rem',
-      padding: '1.25rem 1.5rem',
-      boxShadow: '0 1px 8px rgba(0,0,0,0.06)',
-      display: 'flex',
-      flexDirection: 'column',
-      flex: 1,
-      minWidth: 0,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem' }}>
-        <div style={{
-          width: '48px', height: '48px', borderRadius: '0.75rem',
-          background: iconBg, display: 'flex', alignItems: 'center',
-          justifyContent: 'center', color: iconColor, flexShrink: 0,
-        }}>
+    <div className="bg-white border border-[#eeeeee] rounded-2xl px-6 py-5 shadow-[0_1px_8px_rgba(0,0,0,0.06)] flex flex-col flex-1 min-w-0">
+      <div className="flex items-start justify-between gap-4">
+        {/* Icône */}
+        <div
+          className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+          style={{ background: iconBg, color: iconColor }}
+        >
           {icon}
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ color: '#888888', fontSize: '0.8125rem', fontWeight: 500, margin: '0 0 0.3rem' }}>
+
+        {/* Texte */}
+        <div className="flex-1 min-w-0">
+          <p className="text-[#888888] text-[0.8125rem] font-medium mb-[0.3rem] mt-0">
             {title}
           </p>
-          <p style={{ color: valueColor, fontSize: '1.75rem', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.02em', margin: 0 }}>
+          <p
+            className="text-[1.75rem] font-bold leading-none tracking-[-0.02em] m-0"
+            style={{ color: valueColor }}
+          >
             {fmtNum(value)}
           </p>
-          <p style={{ color: '#bbbbbb', fontSize: '0.75rem', margin: '0.2rem 0 0' }}>
+          <p className="text-[#bbbbbb] text-xs mt-[0.2rem] mb-0">
             {unit}
           </p>
         </div>
-        <div style={{ paddingTop: '0.5rem', flexShrink: 0 }}>
+
+        {/* Sparkline */}
+        <div className="pt-2 shrink-0">
           <Sparkline data={sparkData} color={sparkColor} />
         </div>
       </div>
-      <div style={{ borderTop: '1px solid #f5f5f5', marginTop: '0.875rem', paddingTop: '0.625rem' }}>
+
+      {/* Footer */}
+      <div className="border-t border-[#f5f5f5] mt-[0.875rem] pt-[0.625rem]">
         {bottomContent}
       </div>
     </div>
@@ -152,26 +151,20 @@ function KpiCard({ title, value, unit, bottomContent, icon, iconBg, iconColor, v
 // ── KPI Grid responsive
 function KpiGrid({ children }) {
   const { isMobile, isTablet } = useBreakpoint();
-
-  const gridStyle = {
-    display: 'grid',
-    gap: '1rem',
-    gridTemplateColumns: isMobile
-      ? '1fr'
-      : isTablet
-        ? 'repeat(2, 1fr)'
-        : 'repeat(3, 1fr)',
-  };
-
   const items = React.Children.toArray(children);
 
-  if (isTablet && items.length === 3) {
+  if (isMobile) {
+    return <div className="grid grid-cols-1 gap-4">{children}</div>;
+  }
+
+  if (isTablet) {
     return (
-      <div style={gridStyle}>
+      <div className="grid grid-cols-2 gap-4">
         {items[0]}
         {items[1]}
-        <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'center' }}>
-          <div style={{ width: 'calc(50% - 0.5rem)' }}>
+        {/* 3e carte centrée sur toute la largeur */}
+        <div className="col-span-2 flex justify-center">
+          <div className="w-[calc(50%-0.5rem)]">
             {items[2]}
           </div>
         </div>
@@ -179,7 +172,8 @@ function KpiGrid({ children }) {
     );
   }
 
-  return <div style={gridStyle}>{children}</div>;
+  // Desktop
+  return <div className="grid grid-cols-3 gap-4">{children}</div>;
 }
 
 // ── App principal
@@ -324,13 +318,12 @@ export default function App() {
     };
   }, [tableData]);
 
-  // Calcul du décalage gauche du <main> :
-  // Sidebar (240px si ouverte) + InnerSidebar (56px toujours visible)
+  // Calcul du décalage gauche du <main>
   const mainMarginLeft =
     (sidebarOpen && window.innerWidth >= 1024 ? SIDEBAR_WIDTH : 0) + INNER_WIDTH;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f4f5f7' }}>
+    <div className="min-h-screen bg-[#f4f5f7]">
 
       {/* ── Sidebar gauche ── */}
       <Sidebar open={sidebarOpen} />
@@ -339,7 +332,7 @@ export default function App() {
       {sidebarOpen && window.innerWidth < 1024 && (
         <div
           onClick={() => setSidebarOpen(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(13,12,12,0.35)', zIndex: 20 }}
+          className="fixed inset-0 bg-[rgba(13,12,12,0.35)] z-20"
         />
       )}
 
@@ -349,24 +342,19 @@ export default function App() {
         onToggleSidebar={() => setSidebarOpen(o => !o)}
       />
 
-      {/* ── InnerSidebar fixe (position: fixed dans le composant) ── */}
+      {/* ── InnerSidebar fixe ── */}
       <InnerSidebar
         activeKey={innerTab}
         onSelect={setInnerTab}
         sidebarOpen={sidebarOpen}
       />
 
-      {/* ── Contenu principal — décalé pour laisser place aux sidebars ── */}
+      {/* ── Contenu principal ── */}
       <main
+        className="flex flex-col gap-5 px-5 pb-5 pt-1 transition-[margin-left] duration-300 ease-in-out min-h-[calc(100vh-53px)]"
         style={{
           marginLeft: mainMarginLeft,
-          marginTop: '28px',        /* hauteur du header SidebarP */
-          padding: '0.25rem 1.25rem 1.25rem',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '1.25rem',
-          transition: 'margin-left 0.3s ease-in-out',
-          minHeight: 'calc(100vh - 53px)',
+          marginTop: '28px',
         }}
       >
         <Filters
@@ -378,23 +366,13 @@ export default function App() {
 
         {/* Erreur */}
         {error && (
-          <div style={{
-            background: 'rgba(229,57,53,0.06)',
-            border: '1px solid rgba(229,57,53,0.20)',
-            borderRadius: '0.75rem',
-            padding: '1rem 1.25rem',
-            color: '#c62828',
-            fontSize: '0.875rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem',
-          }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#e53935', flexShrink: 0 }} />
+          <div className="bg-[rgba(229,57,53,0.06)] border border-[rgba(229,57,53,0.20)] rounded-xl px-5 py-4 text-[#c62828] text-sm flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-[#e53935] shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
-        {/* ── 3 KPI Cards responsive ── */}
+        {/* ── 3 KPI Cards ── */}
         {kpis && !loading && (
           <KpiGrid>
             <KpiCard
@@ -408,11 +386,11 @@ export default function App() {
               sparkColor="#12a6e0"
               sparkData={kpis.sparkStock}
               bottomContent={
-                <p style={{ margin: 0, color: '#aaaaaa', fontSize: '0.75rem' }}>
+                <p className="m-0 text-[#aaaaaa] text-xs">
                   Valeur permanente au{' '}
-                  <span style={{ color: '#555555', fontWeight: 600 }}>{kpis.dateFinalLabel}</span>
+                  <span className="text-[#555555] font-semibold">{kpis.dateFinalLabel}</span>
                   {' '}:{' '}
-                  <span style={{ color: '#12a6e0', fontWeight: 600 }}>{fmtNum(kpis.valeurPermanenteDernierJour)} MAD</span>
+                  <span className="text-[#12a6e0] font-semibold">{fmtNum(kpis.valeurPermanenteDernierJour)} MAD</span>
                 </p>
               }
             />
@@ -428,15 +406,15 @@ export default function App() {
               sparkColor="#01a82e"
               sparkData={kpis.sparkEntrees}
               bottomContent={
-                <p style={{ margin: 0, color: '#aaaaaa', fontSize: '0.75rem' }}>
+                <p className="m-0 text-[#aaaaaa] text-xs">
                   {kpis.joursAvecEntrees > 0 ? (
                     <>
                       Pic le{' '}
-                      <span style={{ color: '#555555', fontWeight: 600 }}>{kpis.picEntreeJour[0]}</span>
+                      <span className="text-[#555555] font-semibold">{kpis.picEntreeJour[0]}</span>
                       {' '}:{' '}
-                      <span style={{ color: '#01a82e', fontWeight: 600 }}>{fmtNum(kpis.picEntreeJour[1])} unités</span>
+                      <span className="text-[#01a82e] font-semibold">{fmtNum(kpis.picEntreeJour[1])} unités</span>
                       {' '}·{' '}
-                      <span style={{ color: '#aaaaaa' }}>{kpis.joursAvecEntrees} jour{kpis.joursAvecEntrees > 1 ? 's' : ''} actif{kpis.joursAvecEntrees > 1 ? 's' : ''}</span>
+                      <span className="text-[#aaaaaa]">{kpis.joursAvecEntrees} jour{kpis.joursAvecEntrees > 1 ? 's' : ''} actif{kpis.joursAvecEntrees > 1 ? 's' : ''}</span>
                     </>
                   ) : (
                     <span>Aucune entrée sur la période</span>
@@ -456,15 +434,15 @@ export default function App() {
               sparkColor="#e53935"
               sparkData={kpis.sparkSorties}
               bottomContent={
-                <p style={{ margin: 0, color: '#aaaaaa', fontSize: '0.75rem' }}>
+                <p className="m-0 text-[#aaaaaa] text-xs">
                   {kpis.joursAvecSorties > 0 ? (
                     <>
                       Pic le{' '}
-                      <span style={{ color: '#555555', fontWeight: 600 }}>{kpis.picSortieJour[0]}</span>
+                      <span className="text-[#555555] font-semibold">{kpis.picSortieJour[0]}</span>
                       {' '}:{' '}
-                      <span style={{ color: '#e53935', fontWeight: 600 }}>{fmtNum(kpis.picSortieJour[1])} unités</span>
+                      <span className="text-[#e53935] font-semibold">{fmtNum(kpis.picSortieJour[1])} unités</span>
                       {' '}·{' '}
-                      <span style={{ color: '#aaaaaa' }}>{kpis.joursAvecSorties} jour{kpis.joursAvecSorties > 1 ? 's' : ''} actif{kpis.joursAvecSorties > 1 ? 's' : ''}</span>
+                      <span className="text-[#aaaaaa]">{kpis.joursAvecSorties} jour{kpis.joursAvecSorties > 1 ? 's' : ''} actif{kpis.joursAvecSorties > 1 ? 's' : ''}</span>
                     </>
                   ) : (
                     <span>Aucune sortie sur la période</span>
@@ -480,13 +458,10 @@ export default function App() {
           <StockTable data={tableData} loading={loading} />
         )}
 
-        {/* Aucun résultat après chargement */}
+        {/* Aucun résultat */}
         {!loading && tableData !== null && tableData.length === 0 && !error && (
-          <div style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center',
-            justifyContent: 'center', padding: '4rem 1rem', textAlign: 'center',
-          }}>
-            <p style={{ color: '#888888', fontSize: '0.875rem', fontWeight: 500, margin: 0 }}>
+          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+            <p className="text-[#888888] text-sm font-medium m-0">
               Aucune donnée pour cette période ou ces filtres.
             </p>
           </div>
