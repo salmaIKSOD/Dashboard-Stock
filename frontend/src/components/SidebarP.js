@@ -1,26 +1,28 @@
-// ---------------------------------------------------
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
-  Menu, X, Bell, UserCircle2, Moon,
+  Menu, X, Bell, UserCircle2,
   LayoutDashboard, PackageSearch, ArrowDownUp,
   BarChart3, Settings, Boxes, Warehouse,
-  BellRing, BrainCircuit, FileText, TrendingUp,
+  BellRing, BrainCircuit, FileText, TrendingUp, Star,
 } from 'lucide-react';
 
-// Chaque page a son titre + son icône
 const PAGE_META = {
-  '/':                 { title: 'Stock Dashboard',   icon: TrendingUp      },
-  '/dashboard':        { title: 'Stock Dashboard',   icon: TrendingUp      },
-  '/stock-journalier': { title: 'Stock journalier',  icon: PackageSearch   },
-  '/mouvements':       { title: 'Mouvements',         icon: ArrowDownUp     },
-  '/articles':         { title: 'Articles',           icon: Boxes           },
-  '/depots':           { title: 'Dépôts',             icon: Warehouse       },
-  '/analyses':         { title: 'Analyses',           icon: BarChart3       },
-  '/alertes':          { title: 'Alertes',            icon: BellRing        },
-  '/previsions':       { title: 'AI Prévisions',      icon: BrainCircuit    },
-  '/rapports':         { title: 'Rapports',           icon: FileText        },
-  '/parametres':       { title: 'Paramètres',         icon: Settings        },
+  '/':                       { title: 'Stock Dashboard',  icon: TrendingUp      },
+  '/dashboard':              { title: 'Stock Dashboard',  icon: TrendingUp      },
+  '/dashboard/charts':       { title: 'Graphiques',       icon: BarChart3       },
+  '/dashboard/trends':       { title: 'Tendances',        icon: TrendingUp      },
+  '/dashboard/reports':      { title: 'Rapports',         icon: FileText        },
+  '/dashboard/favorites':    { title: 'Favoris',          icon: Star            },
+  '/stock-journalier':       { title: 'Stock journalier', icon: PackageSearch   },
+  '/mouvements':             { title: 'Mouvements',       icon: ArrowDownUp     },
+  '/articles':               { title: 'Articles',         icon: Boxes           },
+  '/depots':                 { title: 'Dépôts',           icon: Warehouse       },
+  '/analyses':               { title: 'Analyses',         icon: BarChart3       },
+  '/alertes':                { title: 'Alertes',          icon: BellRing        },
+  '/previsions':             { title: 'AI Prévisions',    icon: BrainCircuit    },
+  '/rapports':               { title: 'Rapports',         icon: FileText        },
+  '/parametres':             { title: 'Paramètres',       icon: Settings        },
 };
 
 export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
@@ -28,7 +30,11 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
   const [userOpen,  setUserOpen]  = useState(false);
   const location = useLocation();
 
-  const meta      = PAGE_META[location.pathname] || PAGE_META['/'];
+  // Match longest path first for nested routes
+  const meta = Object.entries(PAGE_META)
+    .filter(([path]) => location.pathname === path || location.pathname.startsWith(path + '/'))
+    .sort((a, b) => b[0].length - a[0].length)[0]?.[1] ?? PAGE_META['/'];
+
   const PageIcon  = meta.icon;
   const pageTitle = meta.title;
 
@@ -74,9 +80,7 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {/* Icône dynamique selon la page */}
             <PageIcon size={16} style={{ color: '#12a6e0' }} />
-            {/* Titre dynamique selon la page */}
             <span style={{ color: '#0d0c0c', fontWeight: 600, fontSize: '0.995rem', letterSpacing: '0.01em' }}>
               {pageTitle}
             </span>
@@ -91,15 +95,6 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
 
         {/* ── Droite ── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', position: 'relative' }}>
-
-          {/* Theme toggle */}
-          {/* <button
-            style={btnStyle}
-            onMouseEnter={e => { e.currentTarget.style.background = '#f5f5f5'; e.currentTarget.style.color = '#0d0c0c'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#888888'; }}
-          >
-            <Moon size={17} />
-          </button> */}
 
           {/* Notifications */}
           <div style={{ position: 'relative' }}>
@@ -189,7 +184,7 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
         </div>
       </header>
 
-      {/* Spacer header fixe */}
+      {/* Spacer */}
       <div style={{ height: '53px', flexShrink: 0 }} />
     </>
   );

@@ -7,7 +7,7 @@ import StockTable from './components/StockTable';
 import { fetchStock } from './api/stockApi';
 import InnerSidebar from './components/InnerSidebar';
 
-// Pages
+// Pages principales
 import PageStockJournalier from './pages/PageStockJournalier';
 import PageMovements from './pages/PageMovements';
 import PageArticles from './pages/PageArticles';
@@ -17,6 +17,12 @@ import PageAlertes from './pages/PageAlertes';
 import PagePrevisions from './pages/PagePrevisions';
 import PageRapports from './pages/PageRapports';
 import PageParametres from './pages/PageParametres';
+
+// Pages inner dashboard
+import PageCharts from './page/PageCharts';
+import PageTrends from './page/PageTrends';
+import PageDashboardReports from './page/PageDashboardReports';
+import PageFavorites from './page/PageFavorites';
 
 function getDefaultDates() {
   const today = new Date();
@@ -153,13 +159,12 @@ const BASE_PAR_DEFAUT = 'BIJOU';
 const SIDEBAR_WIDTH = 240;
 const INNER_WIDTH = 56;
 
-// ── Dashboard page (isolé dans son propre composant)
+// ── Dashboard principal
 function Dashboard({ sidebarOpen }) {
   const { dateDebut: defaultDebut, dateFin: defaultFin } = getDefaultDates();
   const [tableData, setTableData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [innerTab, setInnerTab] = useState('dashboard');
   const [currentFilters, setCurrentFilters] = useState({
     base: BASE_PAR_DEFAUT, dateDebut: defaultDebut, dateFin: defaultFin,
     depot: null, article: null, cl_no1: null, cl_no2: null, cl_no3: null, cl_no4: null,
@@ -192,13 +197,13 @@ function Dashboard({ sidebarOpen }) {
       keys.find(k => variants.some(v =>
         k.toLowerCase().replace(/[\s_()]/g, '') === v.toLowerCase().replace(/[\s_()]/g, '')
       )) || null;
-    const kDate      = find('Date', 'DateJour', 'datejour');
-    const kEntrees   = find('TotalEntrees', 'Total Entrees', 'TotalEntree', 'totalentree');
-    const kSorties   = find('TotalSorties', 'Total Sorties', 'TotalSortie', 'totalsortie');
-    const kStockFinal= find('StockFinal', 'Stock Final', 'stockfinal');
-    const kSolde     = find('ValeurFinalePermanente', 'Valeur Finale (Permanente)', 'ValeurFinale', 'valeurfinale', 'Solde');
-    const allDates   = tableData.map(r => r[kDate] ? new Date(r[kDate]) : null).filter(Boolean);
-    const maxDate    = allDates.length ? new Date(Math.max(...allDates)) : null;
+    const kDate       = find('Date', 'DateJour', 'datejour');
+    const kEntrees    = find('TotalEntrees', 'Total Entrees', 'TotalEntree', 'totalentree');
+    const kSorties    = find('TotalSorties', 'Total Sorties', 'TotalSortie', 'totalsortie');
+    const kStockFinal = find('StockFinal', 'Stock Final', 'stockfinal');
+    const kSolde      = find('ValeurFinalePermanente', 'Valeur Finale (Permanente)', 'ValeurFinale', 'valeurfinale', 'Solde');
+    const allDates    = tableData.map(r => r[kDate] ? new Date(r[kDate]) : null).filter(Boolean);
+    const maxDate     = allDates.length ? new Date(Math.max(...allDates)) : null;
     const lignesDernierJour = maxDate
       ? tableData.filter(r => r[kDate] && new Date(r[kDate]).toDateString() === maxDate.toDateString())
       : [];
@@ -231,9 +236,6 @@ function Dashboard({ sidebarOpen }) {
 
   return (
     <>
-      {/* InnerSidebar uniquement sur le dashboard */}
-      <InnerSidebar activeKey={innerTab} onSelect={setInnerTab} sidebarOpen={sidebarOpen} />
-
       <Filters
         onFilter={handleFilter}
         initialBase={BASE_PAR_DEFAUT}
@@ -317,6 +319,16 @@ function Dashboard({ sidebarOpen }) {
   );
 }
 
+// ── Shell pour les pages inner (InnerSidebar + contenu)
+function DashboardShell({ sidebarOpen, children }) {
+  return (
+    <>
+      <InnerSidebar sidebarOpen={sidebarOpen} />
+      {children}
+    </>
+  );
+}
+
 // ── App principal
 export default function App() {
   const location = useLocation();
@@ -331,7 +343,7 @@ export default function App() {
     return () => window.removeEventListener('resize', handler);
   }, []);
 
-  const isDashboard = location.pathname === '/' || location.pathname === '/dashboard';
+  const isDashboard = location.pathname === '/' || location.pathname.startsWith('/dashboard');
 
   const mainMarginLeft =
     (sidebarOpen && window.innerWidth >= 1024 ? SIDEBAR_WIDTH : 0) +
@@ -357,17 +369,48 @@ export default function App() {
         style={{ marginLeft: mainMarginLeft, marginTop: '28px' }}
       >
         <Routes>
-          <Route path="/"                  element={<Dashboard sidebarOpen={sidebarOpen} />} />
-          <Route path="/dashboard"         element={<Dashboard sidebarOpen={sidebarOpen} />} />
-          <Route path="/stock-journalier"  element={<PageStockJournalier />} />
-          <Route path="/mouvements"        element={<PageMovements />} />
-          <Route path="/articles"          element={<PageArticles />} />
-          <Route path="/depots"            element={<PageDepots />} />
-          <Route path="/analyses"          element={<PageAnalyses />} />
-          <Route path="/alertes"           element={<PageAlertes />} />
-          <Route path="/previsions"        element={<PagePrevisions />} />
-          <Route path="/rapports"          element={<PageRapports />} />
-          <Route path="/parametres"        element={<PageParametres />} />
+          {/* ── Dashboard + inner tabs ── */}
+          <Route path="/" element={
+            <DashboardShell sidebarOpen={sidebarOpen}>
+              <Dashboard sidebarOpen={sidebarOpen} />
+            </DashboardShell>
+          } />
+          <Route path="/dashboard" element={
+            <DashboardShell sidebarOpen={sidebarOpen}>
+              <Dashboard sidebarOpen={sidebarOpen} />
+            </DashboardShell>
+          } />
+          <Route path="/dashboard/charts" element={
+            <DashboardShell sidebarOpen={sidebarOpen}>
+              <PageCharts />
+            </DashboardShell>
+          } />
+          <Route path="/dashboard/trends" element={
+            <DashboardShell sidebarOpen={sidebarOpen}>
+              <PageTrends />
+            </DashboardShell>
+          } />
+          <Route path="/dashboard/reports" element={
+            <DashboardShell sidebarOpen={sidebarOpen}>
+              <PageDashboardReports />
+            </DashboardShell>
+          } />
+          <Route path="/dashboard/favorites" element={
+            <DashboardShell sidebarOpen={sidebarOpen}>
+              <PageFavorites />
+            </DashboardShell>
+          } />
+
+          {/* ── Pages principales ── */}
+          <Route path="/stock-journalier" element={<PageStockJournalier />} />
+          <Route path="/mouvements"       element={<PageMovements />} />
+          <Route path="/articles"         element={<PageArticles />} />
+          <Route path="/depots"           element={<PageDepots />} />
+          <Route path="/analyses"         element={<PageAnalyses />} />
+          <Route path="/alertes"          element={<PageAlertes />} />
+          <Route path="/previsions"       element={<PagePrevisions />} />
+          <Route path="/rapports"         element={<PageRapports />} />
+          <Route path="/parametres"       element={<PageParametres />} />
         </Routes>
       </main>
     </div>

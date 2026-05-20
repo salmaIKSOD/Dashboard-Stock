@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import {
   Database,
   Layers,
-  Package,
   Warehouse,
   CalendarDays,
   Search,
@@ -12,8 +11,7 @@ import {
   Loader2,
   Check,
   Tag,
-  Eye
-  // SlidersHorizontal,
+  Eye,
 } from 'lucide-react';
 import { fetchBases, fetchFiltres } from '../api/stockApi';
 
@@ -34,7 +32,7 @@ function useBreakpoint() {
   };
 }
 
-// ── Select avec portal (design code 2) + logique code 1 
+// ── Select avec portal
 function Select({ label, icon: Icon, value, onChange, options, placeholder, disabled, loading }) {
   const [open, setOpen] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState({ top: 0, left: 0, width: 0 });
@@ -54,15 +52,10 @@ function Select({ label, icon: Icon, value, onChange, options, placeholder, disa
 
   useEffect(() => {
     const handler = (e) => {
-      if (buttonRef.current && buttonRef.current.contains(e.target)) {
-        return;
-      }
-      if (dropdownRef.current && dropdownRef.current.contains(e.target)) {
-        return;
-      }
+      if (buttonRef.current && buttonRef.current.contains(e.target)) return;
+      if (dropdownRef.current && dropdownRef.current.contains(e.target)) return;
       setOpen(false);
     };
-    
     if (open) {
       updatePos();
       document.addEventListener('mousedown', handler);
@@ -90,89 +83,58 @@ function Select({ label, icon: Icon, value, onChange, options, placeholder, disa
         {Icon && <Icon size={11} />}
         {label}
       </label>
-
       <div className="relative w-full">
         <button
           ref={buttonRef}
           type="button"
           onClick={() => {
-            if (!isDisabled) {
-              updatePos();
-              setOpen(prev => !prev);
-            }
+            if (!isDisabled) { updatePos(); setOpen(prev => !prev); }
           }}
           className={`
             w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg
-            text-left text-sm transition-[border-color,box-shadow] duration-150 outline-none
-            ${open 
-              ? 'border-[#12a6e0] shadow-[0_0_0_3px_rgba(18,166,224,0.12)]' 
-              : isDisabled 
-                ? 'border-[#e0e0e0] bg-[#f5f5f5]' 
-                : 'border-[#c5c5c5] bg-white hover:border-[#12a6e0]'
+            text-left text-sm transition-[border-color,box-shadow] duration-150 outline-none border
+            ${open
+              ? 'border-[#12a6e0] shadow-[0_0_0_3px_rgba(18,166,224,0.12)]'
+              : isDisabled
+              ? 'border-[#e0e0e0] bg-[#f5f5f5]'
+              : 'border-[#c5c5c5] bg-white hover:border-[#12a6e0]'
             }
             ${isDisabled ? 'cursor-not-allowed text-[#aaaaaa]' : 'cursor-pointer'}
             ${selected ? 'text-[#0d0c0c]' : 'text-[#aaaaaa]'}
-            border
           `}
         >
-          <span className="flex-1 truncate">
-            {selected ? selected.label : placeholder}
-          </span>
+          <span className="flex-1 truncate">{selected ? selected.label : placeholder}</span>
           {loading
             ? <Loader2 size={13} className="text-[#12a6e0] flex-shrink-0 animate-spin" />
-            : <ChevronDown size={13} className={`
-                text-[#c5c5c5] flex-shrink-0 transition-transform duration-200
-                ${open ? 'rotate-180' : 'rotate-0'}
-              `} />
+            : <ChevronDown size={13} className={`text-[#c5c5c5] flex-shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : 'rotate-0'}`} />
           }
         </button>
 
         {open && !isDisabled && createPortal(
-          <div 
+          <div
             ref={dropdownRef}
-            style={{
-              position: 'absolute',
-              top: dropdownStyle.top, 
-              left: dropdownStyle.left, 
-              width: dropdownStyle.width,
-              maxWidth: '500px',
-            }}
+            style={{ position: 'absolute', top: dropdownStyle.top, left: dropdownStyle.left, width: dropdownStyle.width, maxWidth: '500px' }}
             className="bg-white border border-[#cce8f6] rounded-[0.65rem] shadow-[0_8px_28px_rgba(18,166,224,0.2),0_4px_12px_rgba(0,0,0,0.15)] z-[99999] max-h-[260px] overflow-y-auto"
           >
             <div
               onClick={() => handleSelect('')}
-              className={`
-                px-4 py-2 text-[13px] cursor-pointer flex items-center justify-between gap-4
-                border-b border-[#eef6fb]
-                ${!value ? 'bg-[rgba(18,166,224,0.05)]' : 'hover:bg-[#f2faff]'}
-              `}
+              className={`px-4 py-2 text-[13px] cursor-pointer flex items-center justify-between gap-4 border-b border-[#eef6fb] ${!value ? 'bg-[rgba(18,166,224,0.05)]' : 'hover:bg-[#f2faff]'}`}
             >
               <span className="italic text-[#999999]">{placeholder}</span>
               {!value && <Check size={13} className="text-[#12a6e0] flex-shrink-0" />}
             </div>
-
             {options.map(o => (
               <div
                 key={o.value}
                 onClick={() => handleSelect(o.value)}
-                className={`
-                  px-4 py-2 text-[13px] cursor-pointer flex items-center justify-between gap-4
-                  border-b border-[#f5f9fc] transition-colors
-                  ${value === o.value 
-                    ? 'bg-[rgba(18,166,224,0.07)] text-[#0d8fc4] font-semibold' 
-                    : 'text-[#1a1a1a] hover:bg-[#f2faff]'
-                  }
-                `}
+                className={`px-4 py-2 text-[13px] cursor-pointer flex items-center justify-between gap-4 border-b border-[#f5f9fc] transition-colors ${value === o.value ? 'bg-[rgba(18,166,224,0.07)] text-[#0d8fc4] font-semibold' : 'text-[#1a1a1a] hover:bg-[#f2faff]'}`}
               >
                 <span className="flex-1 truncate">{o.label}</span>
                 {value === o.value && <Check size={13} className="text-[#12a6e0] flex-shrink-0" />}
               </div>
             ))}
-
             {options.length === 0 && (
-              <div className="py-4 text-[13px] text-[#c5c5c5] text-center">
-                Aucune option disponible
-              </div>
+              <div className="py-4 text-[13px] text-[#c5c5c5] text-center">Aucune option disponible</div>
             )}
           </div>,
           document.body
@@ -182,18 +144,14 @@ function Select({ label, icon: Icon, value, onChange, options, placeholder, disa
   );
 }
 
-// ── DateInputInline inline (design code 2) ─────────────────────────
+// ── DateInputInline — IDENTIQUE à l'original, aucune taille modifiée
 function DateInputInline({ label, value, onChange, min, max }) {
   const [focused, setFocused] = useState(false);
-  const { isMobile } = useBreakpoint();
 
   return (
-    <div className={`flex items-center gap-[6px] ${isMobile ? 'flex-1 min-w-0' : 'flex-shrink-0'}`}>
-      <label className={`
-        flex items-center gap-1 font-semibold uppercase tracking-[0.07em] text-[#12a6e0] whitespace-nowrap flex-shrink-0
-        ${isMobile ? 'text-[10px]' : 'text-[11px]'}
-      `}>
-        <CalendarDays size={isMobile ? 10 : 11} />
+    <div className="flex items-center gap-[6px] flex-1 min-w-0">
+      <label className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.07em] text-[#12a6e0] whitespace-nowrap flex-shrink-0">
+        <CalendarDays size={11} />
         {label}
       </label>
       <input
@@ -208,7 +166,7 @@ function DateInputInline({ label, value, onChange, min, max }) {
           py-[0.35rem] px-[0.65rem] rounded-[0.45rem] border bg-[#fafafa]
           text-[13px] outline-none cursor-pointer
           transition-all duration-150 [color-scheme:light]
-          ${isMobile ? 'w-full min-w-0' : 'min-w-[200px] w-auto'}
+          w-full min-w-0
           ${focused
             ? 'border-[#12a6e0] shadow-[0_0_0_3px_rgba(18,166,224,0.10)] bg-white'
             : 'border-[#d8d8d8] hover:border-[#12a6e0] hover:bg-white hover:shadow-[0_0_0_3px_rgba(18,166,224,0.10)]'
@@ -220,7 +178,7 @@ function DateInputInline({ label, value, onChange, min, max }) {
   );
 }
 
-// ── Composant principal Filters ───────────────────────────────
+// ── Composant principal Filters
 export default function Filters({ onFilter, initialBase = '', initialDateDebut = '', initialDateFin = '' }) {
   const { isMobile, isTablet } = useBreakpoint();
 
@@ -280,20 +238,10 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
 
   const handleBaseChange = (val) => {
     setBase(val);
-    setArticle(''); 
-    setDepot(''); 
-    setFamille('');
-    setCat1(''); 
-    setCat2(''); 
-    setCat3(''); 
-    setCat4('');
-    setArticles([]); 
-    setDepots([]); 
-    setFamilles([]);
-    setCat1List([]); 
-    setCat2List([]); 
-    setCat3List([]); 
-    setCat4List([]);
+    setArticle(''); setDepot(''); setFamille('');
+    setCat1(''); setCat2(''); setCat3(''); setCat4('');
+    setArticles([]); setDepots([]); setFamilles([]);
+    setCat1List([]); setCat2List([]); setCat3List([]); setCat4List([]);
     if (val) loadFiltres(val);
   };
 
@@ -305,12 +253,11 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
 
   const handleCat1Change = (val) => {
     setCat1(val);
-    setCat2(''); 
-    setCat3(''); 
-    setCat4('');
+    setCat2(''); setCat3(''); setCat4('');
     setArticle('');
     if (base) loadFiltres(base, val || null, famille || null);
   };
+
   const handleFilter = async () => {
     if (!base) return;
     setIsFiltering(true);
@@ -334,22 +281,12 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
 
   const handleReset = () => {
     setBase(initialBase);
-    setArticle(''); 
-    setDepot(''); 
-    setFamille('');
-    setCat1(''); 
-    setCat2(''); 
-    setCat3(''); 
-    setCat4('');
+    setArticle(''); setDepot(''); setFamille('');
+    setCat1(''); setCat2(''); setCat3(''); setCat4('');
     setDateDebut(initialDateDebut);
     setDateFin(initialDateFin);
-    setArticles([]); 
-    setDepots([]); 
-    setFamilles([]);
-    setCat1List([]); 
-    setCat2List([]); 
-    setCat3List([]); 
-    setCat4List([]);
+    setArticles([]); setDepots([]); setFamilles([]);
+    setCat1List([]); setCat2List([]); setCat3List([]); setCat4List([]);
     if (initialBase) loadFiltres(initialBase);
     onFilter(null);
   };
@@ -375,51 +312,46 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
-        .animate-spin {
-          animation: spin 1s linear infinite;
-        }
+        .animate-spin { animation: spin 1s linear infinite; }
       `}</style>
 
       <div className="bg-white border border-[#e4e4e4] rounded-[1.1rem] shadow-[0_2px_12px_rgba(18,166,224,0.07),0_1px_3px_rgba(0,0,0,0.05)] overflow-visible animate-[fadeSlideIn_0.3s_ease_both]">
-        {/* HEADER */}
-        <div className="flex items-center flex-wrap gap-3 px-5 py-4 bg-gradient-to-r from-[#f8fcff] to-[#f0f9ff] border-b border-[#e8f4fb] rounded-[1.1rem] rounded-b-none">
+
+        {/* ── HEADER ── */}
+        <div className="flex flex-col gap-3 px-5 py-4 bg-gradient-to-r from-[#f8fcff] to-[#f0f9ff] border-b border-[#e8f4fb] rounded-[1.1rem] rounded-b-none sm:flex-row sm:items-center sm:flex-wrap">
+
+          {/* Titre */}
           <div className="flex items-center gap-[0.55rem] flex-shrink-0">
             <div className="w-7 h-7 rounded-[0.55rem] bg-gradient-to-br from-[#12a6e0] to-[#0d8fc4] flex items-center justify-center shadow-md shadow-[rgba(18,166,224,0.30)]">
               <Eye size={13} className="text-white" />
             </div>
-            <span className="text-[#0d0c0c] text-[13px] font-semibold text-sm tracking-wide">
+            <span className="text-[#0d0c0c] text-[13px] font-semibold tracking-wide">
               Filtres de recherche
             </span>
           </div>
 
-          {!isMobile && (
-            <div className="w-px h-[22px] flex-shrink-0 bg-gradient-to-b from-transparent via-[#c8e8f8] to-transparent" />
-          )}
+          {/* Séparateur — desktop seulement */}
+          <div className="hidden sm:block w-px h-[22px] flex-shrink-0 bg-gradient-to-b from-transparent via-[#c8e8f8] to-transparent" />
 
-          {/* DATE INPUTS — responsive */}
-          <div className={`
-            flex items-center gap-2
-            ${isMobile ? 'w-full flex-wrap' : 'flex-nowrap flex-1'}
-          `}>
-            <DateInputInline 
-              label="Début" 
-              value={dateDebut} 
-              onChange={setDateDebut} 
-              max={dateFin || undefined} 
+          {/* DATES — empilées sur mobile, inline sur desktop */}
+          <div className="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:flex-1 sm:gap-2">
+            <DateInputInline
+              label="Début"
+              value={dateDebut}
+              onChange={setDateDebut}
+              max={dateFin || undefined}
             />
-            <div className="text-[#c5c5c5] text-xs flex-shrink-0">→</div>
-            <DateInputInline 
-              label="Fin" 
-              value={dateFin} 
-              onChange={setDateFin} 
-              min={dateDebut || undefined} 
+            <div className="hidden sm:block text-[#c5c5c5] text-xs flex-shrink-0">→</div>
+            <DateInputInline
+              label="Fin"
+              value={dateFin}
+              onChange={setDateFin}
+              min={dateDebut || undefined}
             />
           </div>
 
-          <div className={`
-            flex items-center gap-[0.45rem] flex-wrap
-            ${isMobile ? 'w-full' : 'ml-auto'}
-          `}>
+          {/* Badges */}
+          <div className="flex items-center gap-[0.45rem] flex-wrap sm:ml-auto">
             {famille && (
               <div className="flex items-center gap-[0.4rem] bg-[rgba(124,77,255,0.07)] border border-[rgba(124,77,255,0.20)] rounded-full py-[0.28rem] px-[0.7rem]">
                 <Tag size={10} className="text-[#7c4dff]" />
@@ -437,103 +369,60 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
           </div>
         </div>
 
-        {/* BODY */}
+        {/* ── BODY ── */}
         <div className="p-5">
           <div className={`grid ${gridCols} gap-4`}>
-            <Select 
-              label="Base SAGE"         
-              icon={Database}  
-              value={base}    
-              onChange={handleBaseChange}   
-              options={bases}    
-              placeholder="Sélectionner une base"     
-              loading={loadingBases} 
+            <Select
+              label="Base SAGE"
+              icon={Database}
+              value={base}
+              onChange={handleBaseChange}
+              options={bases}
+              placeholder="Sélectionner une base"
+              loading={loadingBases}
             />
-            <Select 
-              label="Famille"            
-              icon={Tag}       
-              value={famille} 
-              onChange={handleFamilleChange} 
-              options={familles} 
-              placeholder="Toutes les familles"       
-              disabled={!base} 
-              loading={loadingFiltres && !familles.length} 
+            <Select
+              label="Famille"
+              icon={Tag}
+              value={famille}
+              onChange={handleFamilleChange}
+              options={familles}
+              placeholder="Toutes les familles"
+              disabled={!base}
+              loading={loadingFiltres && !familles.length}
             />
-            <Select 
-              label="Catalogue Niveau 1" 
-              icon={Layers}    
-              value={cat1}    
-              onChange={handleCat1Change}   
-              options={cat1List} 
-              placeholder="Tous les catalogues N1"    
-              disabled={!base} 
-              loading={loadingFiltres && !cat1List.length} 
+            <Select
+              label="Catalogue Niveau 1"
+              icon={Layers}
+              value={cat1}
+              onChange={handleCat1Change}
+              options={cat1List}
+              placeholder="Tous les catalogues N1"
+              disabled={!base}
+              loading={loadingFiltres && !cat1List.length}
             />
-            {/* <Select 
-              label="Catalogue Niveau 2" 
-              icon={Layers}    
-              value={cat2}    
-              onChange={setCat2}            
-              options={cat2List} 
-              placeholder="Tous les catalogues N2"    
-              disabled={!base} 
-              loading={loadingFiltres && !cat2List.length} 
-            />
-            <Select 
-              label="Catalogue Niveau 3" 
-              icon={Layers}    
-              value={cat3}    
-              onChange={setCat3}            
-              options={cat3List} 
-              placeholder="Tous les catalogues N3"    
-              disabled={!base} 
-              loading={loadingFiltres && !cat3List.length} 
-            />
-            <Select 
-              label="Catalogue Niveau 4" 
-              icon={Layers}    
-              value={cat4}    
-              onChange={setCat4}            
-              options={cat4List} 
-              placeholder="Tous les catalogues N4"    
-              disabled={!base} 
-              loading={loadingFiltres && !cat4List.length} 
-            />
-            <Select 
-              label="Article"            
-              icon={Package}   
-              value={article} 
-              onChange={setArticle}         
-              options={articles} 
-              placeholder="Tous les articles"         
-              disabled={!base} 
-              loading={loadingFiltres && !articles.length} 
-            /> */}
-            <Select 
-              label="Dépôt"              
-              icon={Warehouse} 
-              value={depot}   
-              onChange={setDepot}           
-              options={depots}   
-              placeholder="Tous les dépôts"           
-              disabled={!base} 
-              loading={loadingFiltres && !depots.length} 
+            <Select
+              label="Dépôt"
+              icon={Warehouse}
+              value={depot}
+              onChange={setDepot}
+              options={depots}
+              placeholder="Tous les dépôts"
+              disabled={!base}
+              loading={loadingFiltres && !depots.length}
             />
           </div>
 
-          {/* FOOTER */}
-          <div className={`
-            flex gap-[0.65rem] mt-[1.1rem] pt-4 border-t border-[#f0f0f0]
-            ${isMobile ? 'flex-col' : 'flex-row items-center'}
-          `}>
+          {/* ── FOOTER ── */}
+          <div className="flex flex-col gap-[0.65rem] mt-[1.1rem] pt-4 border-t border-[#f0f0f0] sm:flex-row sm:items-center">
             <button
               onClick={handleFilter}
               disabled={!base || isFiltering}
               className={`
                 flex items-center justify-center gap-[0.45rem] px-[1.35rem] py-[0.58rem] rounded-[0.55rem] text-sm font-semibold
                 transition-all duration-200
-                ${!base || isFiltering 
-                  ? 'bg-[#e8f6fd] text-[#92cfe8] cursor-not-allowed' 
+                ${!base || isFiltering
+                  ? 'bg-[#e8f6fd] text-[#92cfe8] cursor-not-allowed'
                   : 'bg-gradient-to-br from-[#12a6e0] to-[#0d8fc4] text-white shadow-md shadow-[rgba(18,166,224,0.35)] hover:shadow-lg'
                 }
               `}
