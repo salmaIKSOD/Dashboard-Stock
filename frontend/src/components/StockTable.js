@@ -57,22 +57,22 @@ function detectColumns(data) {
 // Stock Final badge — couleur orange ambré #e08a00
 function StockBadge({ value }) {
   if (value === null || value === undefined || value === '') {
-    return <span style={{ color: '#c5c5c5' }}>—</span>;
+    return <span className="text-[#c5c5c5]">—</span>;
   }
   const v = Number(value);
-  if (isNaN(v)) return <span style={{ color: '#c5c5c5' }}>—</span>;
+  if (isNaN(v)) return <span className="text-[#c5c5c5]">—</span>;
   if (v > 0) return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#e08a00', fontWeight: 600 }}>
+    <span className="inline-flex items-center gap-1 text-[#e08a00] font-semibold">
       <TrendingUp size={11} /> {fmtNum(v)}
     </span>
   );
   if (v < 0) return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#e53935', fontWeight: 600 }}>
+    <span className="inline-flex items-center gap-1 text-[#e53935] font-semibold">
       <TrendingDown size={11} /> {fmtNum(v)}
     </span>
   );
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#c5c5c5' }}>
+    <span className="inline-flex items-center gap-1 text-[#c5c5c5]">
       <Minus size={11} /> 0
     </span>
   );
@@ -84,44 +84,35 @@ function Th({ label, colKey, sortKey, sortDir, onSort, align = 'left' }) {
   return (
     <th
       onClick={() => colKey && onSort(colKey)}
-      style={{
-        padding: '0.75rem 1rem',
-        textAlign: align,
-        cursor: colKey ? 'pointer' : 'default',
-        userSelect: 'none',
-        whiteSpace: 'nowrap',
-        background: '#f8f8f8',
-        overflow: 'hidden',
-      }}
+      className={`
+        px-4 py-3 bg-[#f8f8f8] whitespace-nowrap overflow-hidden
+        ${colKey ? 'cursor-pointer select-none' : 'cursor-default'}
+        ${isRight ? 'text-right' : 'text-left'}
+      `}
     >
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px',
-        justifyContent: isRight ? 'flex-end' : 'flex-start',
-      }}>
+      <div className={`flex items-center gap-1.5 ${isRight ? 'justify-end' : 'justify-start'}`}>
         {colKey && isRight && (
-          <span style={{ color: active ? '#12a6e0' : '#c5c5c5' }}>
+          <span className={active ? 'text-[#12a6e0]' : 'text-[#c5c5c5]'}>
             {active
-              ? (sortDir === 'asc' ? <ArrowUp size={11} style={{ color: '#12a6e0' }} /> : <ArrowDown size={11} style={{ color: '#12a6e0' }} />)
+              ? (sortDir === 'asc'
+                  ? <ArrowUp size={11} className="text-[#12a6e0]" />
+                  : <ArrowDown size={11} className="text-[#12a6e0]" />)
               : <ArrowUpDown size={11} />
             }
           </span>
         )}
-        <span style={{
-          fontSize: '0.6875rem',
-          fontWeight: 600,
-          textTransform: 'uppercase',
-          letterSpacing: '0.06em',
-          color: active ? '#12a6e0' : '#888888',
-          transition: 'color 0.15s',
-        }}>
+        <span className={`
+          text-[0.6875rem] font-semibold uppercase tracking-[0.06em] transition-colors duration-150
+          ${active ? 'text-[#12a6e0]' : 'text-[#888888]'}
+        `}>
           {label}
         </span>
         {colKey && !isRight && (
-          <span style={{ color: active ? '#12a6e0' : '#c5c5c5' }}>
+          <span className={active ? 'text-[#12a6e0]' : 'text-[#c5c5c5]'}>
             {active
-              ? (sortDir === 'asc' ? <ArrowUp size={11} style={{ color: '#12a6e0' }} /> : <ArrowDown size={11} style={{ color: '#12a6e0' }} />)
+              ? (sortDir === 'asc'
+                  ? <ArrowUp size={11} className="text-[#12a6e0]" />
+                  : <ArrowDown size={11} className="text-[#12a6e0]" />)
               : <ArrowUpDown size={11} />
             }
           </span>
@@ -167,7 +158,6 @@ export default function StockTable({ data, loading }) {
   const [page,    setPage]    = useState(1);
   const PAGE_SIZE = 50;
 
-  // ← REF sur le conteneur de la table pour le scroll-to-top
   const tableTopRef = useRef(null);
 
   const cols = useMemo(() => detectColumns(data), [data]);
@@ -200,28 +190,28 @@ export default function StockTable({ data, loading }) {
     setPage(1);
   };
 
-  // ← Changement de page + scroll vers le haut de la table
-  const goToPage = (p) => {
+  const goToPage = (p, scroll = false) => {
     setPage(p);
-    tableTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (scroll) {
+      tableTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   };
 
   // Loading skeleton
   if (loading) {
     return (
-      <div style={{ background: '#ffffff', border: '1px solid #e8e8e8', borderRadius: '1rem', overflow: 'hidden', boxShadow: '0 1px 6px rgba(0,0,0,0.06)' }}>
-        <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#12a6e0', animation: 'pulse 2s infinite' }} />
-          <div style={{ height: '12px', width: '160px', background: '#f0f0f0', borderRadius: '4px' }} />
+      <div className="bg-white border border-[#e8e8e8] rounded-2xl overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.06)]">
+        <div className="px-5 py-4 border-b border-[#f0f0f0] flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-[#12a6e0] animate-pulse" />
+          <div className="h-3 w-40 bg-[#f0f0f0] rounded" />
         </div>
-        <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className="p-5 flex flex-col gap-2">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} style={{
-              height: '40px',
-              background: '#f8f8f8',
-              borderRadius: '8px',
-              animationDelay: `${i * 50}ms`,
-            }} />
+            <div
+              key={i}
+              className="h-10 bg-[#f8f8f8] rounded-lg"
+              style={{ animationDelay: `${i * 50}ms` }}
+            />
           ))}
         </div>
       </div>
@@ -231,84 +221,40 @@ export default function StockTable({ data, loading }) {
   // Vide
   if (!data || data.length === 0) {
     return (
-      <div style={{
-        background: '#ffffff',
-        border: '1px solid #e8e8e8',
-        borderRadius: '1rem',
-        padding: '4rem',
-        textAlign: 'center',
-        boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
-      }}>
-        <PackageX size={36} style={{ color: '#e0e0e0', margin: '0 auto 0.75rem' }} />
-        <p style={{ color: '#c5c5c5', fontSize: '0.875rem' }}>
+      <div className="bg-white border border-[#e8e8e8] rounded-2xl p-16 text-center shadow-[0_1px_6px_rgba(0,0,0,0.06)]">
+        <PackageX size={36} className="text-[#e0e0e0] mx-auto mb-3" />
+        <p className="text-[#c5c5c5] text-sm">
           Aucun résultat — ajustez vos filtres et cliquez sur Filtrer
         </p>
       </div>
     );
   }
 
-  const pageBtnBase = {
-    padding: '0.375rem 0.75rem',
-    borderRadius: '0.5rem',
-    fontSize: '0.75rem',
-    background: '#f5f5f5',
-    color: '#666666',
-    border: '1px solid #e0e0e0',
-    cursor: 'pointer',
-    transition: 'all 0.15s',
-  };
-
   return (
-    // ← ref posée ici pour pointer le haut du composant
-    <div ref={tableTopRef} style={{
-      background: '#ffffff',
-      border: '1px solid #e8e8e8',
-      borderRadius: '1rem',
-      overflow: 'hidden',
-      boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
-    }}>
+    <div
+      ref={tableTopRef}
+      className="bg-white border border-[#e8e8e8] rounded-2xl overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.06)]"
+    >
 
       {/* Header */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0.875rem 1.25rem',
-        borderBottom: '1px solid #f0f0f0',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#01d63a' }} />
-          <span style={{ color: '#0d0c0c', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#f0f0f0]">
+        <div className="flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-[#01d63a]" />
+          <span className="text-[#0d0c0c] text-[0.75rem] font-semibold uppercase tracking-[0.06em]">
             Résultats
           </span>
-          <span style={{
-            background: '#f0f0f0',
-            color: '#666666',
-            fontSize: '0.6875rem',
-            fontFamily: 'monospace',
-            padding: '2px 8px',
-            borderRadius: '4px',
-          }}>
+          <span className="bg-[#f0f0f0] text-[#666666] text-[0.6875rem] font-mono px-2 py-0.5 rounded">
             {sorted.length.toLocaleString('fr-FR')} lignes
           </span>
         </div>
         <button
           onClick={() => exportCSV(sorted, cols)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            padding: '0.375rem 0.75rem',
-            borderRadius: '0.5rem',
-            fontSize: '0.75rem',
-            background: '#f5f5f5',
-            color: '#666666',
-            border: '1px solid #e0e0e0',
-            cursor: 'pointer',
-            transition: 'all 0.15s',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = '#eaeaea'; e.currentTarget.style.color = '#0d0c0c'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = '#f5f5f5'; e.currentTarget.style.color = '#666666'; }}
+          className="
+            flex items-center gap-2 px-3 py-1.5 rounded-lg text-[0.75rem]
+            bg-[#f5f5f5] text-[#666666] border border-[#e0e0e0] cursor-pointer
+            transition-all duration-150
+            hover:bg-[#eaeaea] hover:text-[#0d0c0c]
+          "
         >
           <Download size={12} />
           Exporter CSV
@@ -316,16 +262,25 @@ export default function StockTable({ data, loading }) {
       </div>
 
       {/* Table */}
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', fontSize: '0.875rem', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse table-fixed">
           <colgroup>
-            <col style={{width:'100px'}}/><col style={{width:'120px'}}/><col style={{width:'70px'}}/><col style={{width:'130px'}}/><col style={{width:'100px'}}/><col style={{width:'180px'}}/><col style={{width:'110px'}}/><col style={{width:'110px'}}/><col style={{width:'110px'}}/><col style={{width:'110px'}}/>
+            <col className="w-[100px]" />
+            <col className="w-[120px]" />
+            <col className="w-[70px]" />
+            <col className="w-[130px]" />
+            <col className="w-[100px]" />
+            <col className="w-[180px]" />
+            <col className="w-[110px]" />
+            <col className="w-[110px]" />
+            <col className="w-[110px]" />
+            <col className="w-[110px]" />
           </colgroup>
           <thead>
-            <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
+            <tr className="border-b border-[#f0f0f0]">
               <Th label="Date"          colKey={cols.date}       sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
               <Th label="Catalogue N1" />
-              <Th label="Dépôt"      />
+              <Th label="Dépôt" />
               <Th label="Nom Dépôt" />
               <Th label="Article" />
               <Th label="Nom Article" />
@@ -343,89 +298,83 @@ export default function StockTable({ data, loading }) {
               const hasMvt  = entrees > 0 || sorties > 0;
 
               return (
-                <tr key={idx}
-                  style={{
-                    borderBottom: '1px solid #f8f8f8',
-                    transition: 'background 0.1s',
-                    opacity: hasMvt ? 1 : 0.75,
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = hasMvt ? 'rgba(18,166,224,0.04)' : '#fafafa'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                <tr
+                  key={idx}
+                  className={`
+                    border-b border-[#f8f8f8] transition-colors duration-100
+                    ${hasMvt ? 'opacity-100 hover:bg-[rgba(18,166,224,0.04)]' : 'opacity-75 hover:bg-[#fafafa]'}
+                  `}
                 >
                   {/* Date */}
-                  <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', fontSize: '0.75rem', color: '#888888', whiteSpace: 'nowrap' }}>
+                  <td className="px-4 py-3 font-mono text-[0.75rem] text-[#888888] whitespace-nowrap">
                     {fmtDate(row[cols.date])}
                   </td>
 
                   {/* Catalogue N1 */}
-                  <td style={{ padding: '0.75rem 1rem' }}>
+                  <td className="px-4 py-3">
                     {row[cols.catN1]
-                      ? <span style={{
-                          display: 'inline-block',
-                          background: 'rgba(18,166,224,0.08)',
-                          color: '#0b7db0',
-                          fontSize: '0.6875rem',
-                          padding: '2px 8px',
-                          borderRadius: '4px',
-                          border: '1px solid rgba(18,166,224,0.18)',
-                          whiteSpace: 'nowrap',
-                        }}>
+                      ? <span className="
+                          inline-block bg-[rgba(18,166,224,0.08)] text-[#0b7db0]
+                          text-[0.6875rem] px-2 py-0.5 rounded
+                          border border-[rgba(18,166,224,0.18)] whitespace-nowrap
+                        ">
                           {row[cols.catN1]}
                         </span>
-                      : <span style={{ color: '#e0e0e0' }}>—</span>
+                      : <span className="text-[#e0e0e0]">—</span>
                     }
                   </td>
 
                   {/* Dépôt */}
-                  <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', fontSize: '0.75rem', color: '#888888' }}>
+                  <td className="px-4 py-3 font-mono text-[0.75rem] text-[#888888]">
                     {row[cols.depot] ?? '—'}
                   </td>
 
                   {/* Nom Dépôt */}
-                  <td style={{ padding: '0.75rem 1rem', color: '#555555', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                  <td className="px-4 py-3 text-[#555555] text-[0.75rem] whitespace-nowrap">
                     {row[cols.nomDepot] ?? '—'}
                   </td>
 
                   {/* Article */}
-                  <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', fontSize: '0.75rem', color: '#12a6e0' }}>
+                  <td className="px-4 py-3 font-mono text-[0.75rem] text-[#12a6e0]">
                     {row[cols.article] ?? '—'}
                   </td>
 
                   {/* Nom Article */}
-                  <td style={{ padding: '0.75rem 1rem', color: '#444444', fontSize: '0.75rem', whiteSpace: 'nowrap', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}
-                    title={row[cols.design]}>
+                  <td
+                    className="px-4 py-3 text-[#444444] text-[0.75rem] whitespace-nowrap max-w-[200px] overflow-hidden text-ellipsis"
+                    title={row[cols.design]}
+                  >
                     {row[cols.design] ?? '—'}
                   </td>
 
-                  {/* Total Entrées — vert #01a82e */}
-                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                  {/* Total Entrées */}
+                  <td className="px-4 py-3 text-right">
                     {entrees > 0
-                      ? <span style={{ color: '#01a82e', fontWeight: 600 }}>{fmtNum(entrees)}</span>
-                      : <span style={{ color: '#e0e0e0', fontSize: '0.75rem' }}>—</span>
+                      ? <span className="text-[#01a82e] font-semibold">{fmtNum(entrees)}</span>
+                      : <span className="text-[#e0e0e0] text-[0.75rem]">—</span>
                     }
                   </td>
 
-                  {/* Total Sorties — rouge #e53935 */}
-                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                  {/* Total Sorties */}
+                  <td className="px-4 py-3 text-right">
                     {sorties > 0
-                      ? <span style={{ color: '#e53935', fontWeight: 600 }}>{fmtNum(sorties)}</span>
-                      : <span style={{ color: '#e0e0e0', fontSize: '0.75rem' }}>—</span>
+                      ? <span className="text-[#e53935] font-semibold">{fmtNum(sorties)}</span>
+                      : <span className="text-[#e0e0e0] text-[0.75rem]">—</span>
                     }
                   </td>
 
-                  {/* Solde — inchangé (bleu/rouge/gris) */}
-                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
-                    <span style={{
-                      fontWeight: 600,
-                      fontSize: '0.875rem',
-                      color: solde > 0 ? '#12a6e0' : solde < 0 ? '#e53935' : '#c5c5c5',
-                    }}>
+                  {/* Solde */}
+                  <td className="px-4 py-3 text-right">
+                    <span className={`
+                      font-semibold text-[0.875rem]
+                      ${solde > 0 ? 'text-[#12a6e0]' : solde < 0 ? 'text-[#e53935]' : 'text-[#c5c5c5]'}
+                    `}>
                       {fmtNum(solde)}
                     </span>
                   </td>
 
-                  {/* Stock Final — orange ambré #e08a00 via StockBadge */}
-                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                  {/* Stock Final */}
+                  <td className="px-4 py-3 text-right">
                     <StockBadge value={row[cols.stockFinal]} />
                   </td>
                 </tr>
@@ -437,23 +386,21 @@ export default function StockTable({ data, loading }) {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0.75rem 1.25rem',
-          borderTop: '1px solid #f0f0f0',
-        }}>
-          <span style={{ color: '#c5c5c5', fontSize: '0.75rem' }}>
+        <div className="flex items-center justify-between px-5 py-3 border-t border-[#f0f0f0]">
+          <span className="text-[#c5c5c5] text-[0.75rem]">
             Page {page} / {totalPages}
           </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div className="flex items-center gap-1">
             <button
               onClick={() => goToPage(Math.max(1, page - 1))}
               disabled={page === 1}
-              style={{ ...pageBtnBase, opacity: page === 1 ? 0.35 : 1, cursor: page === 1 ? 'not-allowed' : 'pointer' }}
-              onMouseEnter={e => { if (page !== 1) { e.currentTarget.style.background = '#eaeaea'; e.currentTarget.style.color = '#0d0c0c'; }}}
-              onMouseLeave={e => { e.currentTarget.style.background = '#f5f5f5'; e.currentTarget.style.color = '#666666'; }}
+              className={`
+                px-3 py-1.5 rounded-lg text-[0.75rem]
+                bg-[#f5f5f5] text-[#666666] border border-[#e0e0e0]
+                transition-all duration-150
+                hover:bg-[#eaeaea] hover:text-[#0d0c0c]
+                disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-[#f5f5f5] disabled:hover:text-[#666666]
+              `}
             >
               ← Préc.
             </button>
@@ -462,19 +409,16 @@ export default function StockTable({ data, loading }) {
               const p = Math.max(1, Math.min(totalPages - 4, page - 2)) + i;
               if (p < 1 || p > totalPages) return null;
               return (
-                <button key={p} onClick={() => goToPage(p)}
-                  style={{
-                    width: '2rem',
-                    height: '2rem',
-                    borderRadius: '0.5rem',
-                    fontSize: '0.75rem',
-                    border: page === p ? 'none' : '1px solid #e0e0e0',
-                    background: page === p ? '#12a6e0' : '#f5f5f5',
-                    color: page === p ? '#ffffff' : '#666666',
-                    fontWeight: page === p ? 600 : 400,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                  }}
+                <button
+                  key={p}
+                  onClick={() => goToPage(p, true)}
+                  className={`
+                    w-8 h-8 rounded-lg text-[0.75rem] cursor-pointer transition-all duration-150
+                    ${page === p
+                      ? 'bg-[#12a6e0] text-white font-semibold border-0'
+                      : 'bg-[#f5f5f5] text-[#666666] border border-[#e0e0e0] font-normal hover:bg-[#eaeaea] hover:text-[#0d0c0c]'
+                    }
+                  `}
                 >
                   {p}
                 </button>
@@ -484,9 +428,13 @@ export default function StockTable({ data, loading }) {
             <button
               onClick={() => goToPage(Math.min(totalPages, page + 1))}
               disabled={page === totalPages}
-              style={{ ...pageBtnBase, opacity: page === totalPages ? 0.35 : 1, cursor: page === totalPages ? 'not-allowed' : 'pointer' }}
-              onMouseEnter={e => { if (page !== totalPages) { e.currentTarget.style.background = '#eaeaea'; e.currentTarget.style.color = '#0d0c0c'; }}}
-              onMouseLeave={e => { e.currentTarget.style.background = '#f5f5f5'; e.currentTarget.style.color = '#666666'; }}
+              className={`
+                px-3 py-1.5 rounded-lg text-[0.75rem]
+                bg-[#f5f5f5] text-[#666666] border border-[#e0e0e0]
+                transition-all duration-150
+                hover:bg-[#eaeaea] hover:text-[#0d0c0c]
+                disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-[#f5f5f5] disabled:hover:text-[#666666]
+              `}
             >
               Suiv. →
             </button>

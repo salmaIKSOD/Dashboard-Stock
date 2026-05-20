@@ -177,7 +177,7 @@ function KpiGrid({ children }) {
 }
 
 // ── App principal
-const BASE_PAR_DEFAUT = 'STE_NGDM';
+const BASE_PAR_DEFAUT = 'BIJOU';
 const SIDEBAR_WIDTH   = 240;
 const INNER_WIDTH     = 56;
 
