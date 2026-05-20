@@ -54,7 +54,7 @@ function detectColumns(data) {
   };
 }
 
-// Stock Final badge — couleur orange ambré #e08a00
+// Stock Final badge 
 function StockBadge({ value }) {
   if (value === null || value === undefined || value === '') {
     return <span className="text-[#c5c5c5]">—</span>;
