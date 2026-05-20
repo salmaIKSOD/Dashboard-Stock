@@ -254,38 +254,55 @@
 //   );
 // }
 
-import React, { useState } from 'react';
-import { Menu, X, Bell, UserCircle2, TrendingUp, Moon } from 'lucide-react';
 
-// Mapping clé → titre affiché dans le header
-const PAGE_TITLES = {
-  'dashboard':       'Stock Dashboard',
-  'stock-journalier':'Stock journalier',
-  'mouvements':      'Mouvements',
-  'articles':        'Articles',
-  'depots':          'Dépôts',
-  'analyses':        'Analyses',
-  'alertes':         'Alertes',
-  'previsions':      'AI Prévisions',
-  'rapports':        'Rapports',
-  'parametres':      'Paramètres',
+// ---------------------------------------------------
+import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import {
+  Menu, X, Bell, UserCircle2, Moon,
+  LayoutDashboard, PackageSearch, ArrowDownUp,
+  BarChart3, Settings, Boxes, Warehouse,
+  BellRing, BrainCircuit, FileText, TrendingUp,
+} from 'lucide-react';
+
+// Chaque page a son titre + son icône
+const PAGE_META = {
+  '/':                 { title: 'Stock Dashboard',   icon: TrendingUp      },
+  '/dashboard':        { title: 'Stock Dashboard',   icon: TrendingUp      },
+  '/stock-journalier': { title: 'Stock journalier',  icon: PackageSearch   },
+  '/mouvements':       { title: 'Mouvements',         icon: ArrowDownUp     },
+  '/articles':         { title: 'Articles',           icon: Boxes           },
+  '/depots':           { title: 'Dépôts',             icon: Warehouse       },
+  '/analyses':         { title: 'Analyses',           icon: BarChart3       },
+  '/alertes':          { title: 'Alertes',            icon: BellRing        },
+  '/previsions':       { title: 'AI Prévisions',      icon: BrainCircuit    },
+  '/rapports':         { title: 'Rapports',           icon: FileText        },
+  '/parametres':       { title: 'Paramètres',         icon: Settings        },
 };
 
-export default function SidebarP({ sidebarOpen, onToggleSidebar, activePage = 'dashboard' }) {
+export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
   const [notifOpen, setNotifOpen] = useState(false);
-  const [userOpen, setUserOpen] = useState(false);
+  const [userOpen,  setUserOpen]  = useState(false);
+  const location = useLocation();
+
+  const meta      = PAGE_META[location.pathname] || PAGE_META['/'];
+  const PageIcon  = meta.icon;
+  const pageTitle = meta.title;
 
   const now = new Date();
-  const dateStr = now.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+  const dateStr = now.toLocaleDateString('fr-FR', {
+    weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
+  });
 
   const SIDEBAR_WIDTH = 240;
   const leftOffset = sidebarOpen && window.innerWidth >= 1024 ? SIDEBAR_WIDTH : 0;
 
   const btnStyle = {
-    width: '2rem', height: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
-    borderRadius: '0.5rem', background: 'transparent', border: 'none', cursor: 'pointer',
-    color: '#888888', transition: 'all 0.15s',
+    width: '2rem', height: '2rem', display: 'flex', alignItems: 'center',
+    justifyContent: 'center', borderRadius: '0.5rem', background: 'transparent',
+    border: 'none', cursor: 'pointer', color: '#888888', transition: 'all 0.15s',
   };
+
   const dropdownStyle = {
     position: 'absolute', right: 0, top: 'calc(100% + 0.5rem)',
     background: '#ffffff', border: '1px solid #e8e8e8', borderRadius: '0.75rem',
@@ -300,7 +317,8 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar, activePage = 'd
         position: 'fixed', top: 0, left: leftOffset, right: 0, zIndex: 20,
         boxShadow: '0 1px 4px rgba(0,0,0,0.05)', transition: 'left 0.3s ease-in-out',
       }}>
-        {/* Gauche */}
+
+        {/* ── Gauche ── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <button
             onClick={onToggleSidebar}
@@ -313,43 +331,65 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar, activePage = 'd
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <TrendingUp size={16} style={{ color: '#12a6e0' }} />
+            {/* Icône dynamique selon la page */}
+            <PageIcon size={16} style={{ color: '#12a6e0' }} />
             {/* Titre dynamique selon la page */}
             <span style={{ color: '#0d0c0c', fontWeight: 600, fontSize: '0.995rem', letterSpacing: '0.01em' }}>
-              {PAGE_TITLES[activePage] || 'Stock Dashboard'}
+              {pageTitle}
             </span>
-            <span style={{ color: '#c5c5c5', fontSize: '0.75rem', marginLeft: '0.5rem', fontWeight: 300 }} className="hidden sm:inline">
+            <span
+              className="hidden sm:inline"
+              style={{ color: '#c5c5c5', fontSize: '0.75rem', marginLeft: '0.5rem', fontWeight: 300 }}
+            >
               {dateStr}
             </span>
           </div>
         </div>
 
-        {/* Droite — inchangée */}
+        {/* ── Droite ── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', position: 'relative' }}>
-          <button style={btnStyle}
+
+          {/* Theme toggle */}
+          <button
+            style={btnStyle}
             onMouseEnter={e => { e.currentTarget.style.background = '#f5f5f5'; e.currentTarget.style.color = '#0d0c0c'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#888888'; }}>
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#888888'; }}
+          >
             <Moon size={17} />
           </button>
 
           {/* Notifications */}
           <div style={{ position: 'relative' }}>
-            <button onClick={() => { setNotifOpen(!notifOpen); setUserOpen(false); }}
+            <button
+              onClick={() => { setNotifOpen(!notifOpen); setUserOpen(false); }}
               style={{ ...btnStyle, position: 'relative' }}
               onMouseEnter={e => { e.currentTarget.style.background = '#f5f5f5'; e.currentTarget.style.color = '#0d0c0c'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#888888'; }}>
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#888888'; }}
+            >
               <Bell size={17} />
-              <span style={{ position: 'absolute', top: '6px', right: '6px', width: '6px', height: '6px', borderRadius: '50%', background: '#12a6e0', border: '1.5px solid #ffffff' }} />
+              <span style={{
+                position: 'absolute', top: '6px', right: '6px',
+                width: '6px', height: '6px', borderRadius: '50%',
+                background: '#12a6e0', border: '1.5px solid #ffffff',
+              }} />
             </button>
+
             {notifOpen && (
               <div style={{ ...dropdownStyle, width: '288px' }}>
                 <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #f0f0f0' }}>
-                  <p style={{ color: '#0d0c0c', fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', margin: 0 }}>Notifications</p>
+                  <p style={{ color: '#0d0c0c', fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', margin: 0 }}>
+                    Notifications
+                  </p>
                 </div>
-                {[{ dot: '#12a6e0', text: 'Base STE_NGDM synchronisée', time: 'Il y a 2 min' }, { dot: '#01d63a', text: 'Nouveaux mouvements détectés (BIJOU)', time: 'Il y a 15 min' }].map((n, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.75rem 1rem', cursor: 'pointer', transition: 'background 0.1s' }}
+                {[
+                  { dot: '#12a6e0', text: 'Base STE_NGDM synchronisée',          time: 'Il y a 2 min'  },
+                  { dot: '#01d63a', text: 'Nouveaux mouvements détectés (BIJOU)', time: 'Il y a 15 min' },
+                ].map((n, i) => (
+                  <div key={i}
+                    style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.75rem 1rem', cursor: 'pointer', transition: 'background 0.1s' }}
                     onMouseEnter={e => e.currentTarget.style.background = '#f8f8f8'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
                     <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: n.dot, marginTop: '4px', flexShrink: 0 }} />
                     <div>
                       <p style={{ color: '#0d0c0c', fontSize: '0.75rem', margin: 0 }}>{n.text}</p>
@@ -358,7 +398,9 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar, activePage = 'd
                   </div>
                 ))}
                 <div style={{ padding: '0.5rem 1rem', borderTop: '1px solid #f0f0f0', textAlign: 'center' }}>
-                  <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#12a6e0', fontSize: '0.6875rem', fontWeight: 500 }}>Voir tout</button>
+                  <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#12a6e0', fontSize: '0.6875rem', fontWeight: 500 }}>
+                    Voir tout
+                  </button>
                 </div>
               </div>
             )}
@@ -366,27 +408,36 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar, activePage = 'd
 
           {/* User */}
           <div style={{ position: 'relative' }}>
-            <button onClick={() => { setUserOpen(!userOpen); setNotifOpen(false); }}
+            <button
+              onClick={() => { setUserOpen(!userOpen); setNotifOpen(false); }}
               style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.375rem 0.5rem', borderRadius: '0.5rem', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'background 0.15s' }}
               onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-              <div style={{ width: '1.75rem', height: '1.75rem', borderRadius: '50%', background: 'linear-gradient(135deg, #12a6e0, #01d63a)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontSize: '0.6875rem', fontWeight: 700 }}>AD</div>
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <div style={{ width: '1.75rem', height: '1.75rem', borderRadius: '50%', background: 'linear-gradient(135deg, #12a6e0, #01d63a)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontSize: '0.6875rem', fontWeight: 700 }}>
+                AD
+              </div>
               <span className="hidden sm:inline" style={{ color: '#666666', fontSize: '0.75rem' }}>Admin</span>
             </button>
+
             {userOpen && (
               <div style={{ ...dropdownStyle, width: '208px' }}>
                 <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #f0f0f0' }}>
                   <p style={{ color: '#0d0c0c', fontSize: '0.75rem', fontWeight: 500, margin: 0 }}>Administrateur</p>
                   <p style={{ color: '#c5c5c5', fontSize: '0.625rem', margin: '2px 0 0' }}>admin@sage.local</p>
                 </div>
-                <button style={{ width: '100%', textAlign: 'left', padding: '0.625rem 1rem', color: '#555555', fontSize: '0.75rem', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.1s' }}
+                <button
+                  style={{ width: '100%', textAlign: 'left', padding: '0.625rem 1rem', color: '#555555', fontSize: '0.75rem', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.1s' }}
                   onMouseEnter={e => { e.currentTarget.style.background = '#f5f5f5'; e.currentTarget.style.color = '#0d0c0c'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#555555'; }}>
-                  <UserCircle2 size={13} />Mon profil
+                  onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#555555'; }}
+                >
+                  <UserCircle2 size={13} /> Mon profil
                 </button>
-                <button style={{ width: '100%', textAlign: 'left', padding: '0.625rem 1rem', color: '#e53935', fontSize: '0.75rem', background: 'none', border: 'none', borderTop: '1px solid #f0f0f0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'background 0.1s' }}
+                <button
+                  style={{ width: '100%', textAlign: 'left', padding: '0.625rem 1rem', color: '#e53935', fontSize: '0.75rem', background: 'none', border: 'none', borderTop: '1px solid #f0f0f0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'background 0.1s' }}
                   onMouseEnter={e => e.currentTarget.style.background = 'rgba(229,57,53,0.05)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                  onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                >
                   Déconnexion
                 </button>
               </div>
@@ -394,6 +445,8 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar, activePage = 'd
           </div>
         </div>
       </header>
+
+      {/* Spacer header fixe */}
       <div style={{ height: '53px', flexShrink: 0 }} />
     </>
   );
