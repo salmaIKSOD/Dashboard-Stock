@@ -4,6 +4,7 @@ import {
   LayoutDashboard, PackageSearch, ArrowDownUp, BarChart3, Settings,
   ChevronRight, Boxes, Warehouse, BellRing, BrainCircuit, FileText,
 } from 'lucide-react';
+import { Package, TrendingUp, TrendingDown } from 'lucide-react';
 import logo from '../images/logo.png';
 
 const NAV_ITEMS = [

@@ -311,7 +311,6 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
     setArticle('');
     if (base) loadFiltres(base, val || null, famille || null);
   };
-
   const handleFilter = async () => {
     if (!base) return;
     setIsFiltering(true);
