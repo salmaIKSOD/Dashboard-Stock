@@ -20,9 +20,14 @@ const NAV_ITEMS = [
   // { label: 'Paramètres',       path: '/parametres',       icon: Settings        },
 ];
 
-export default function Sidebar({ open }) {
+export default function Sidebar({ open , onClose  }) {
   const navigate  = useNavigate();
   const location  = useLocation();
+
+  const handleNav = (path) => {
+    navigate(path);
+    if (window.innerWidth < 1024 && onClose) onClose();
+  };
 
   return (
     <aside
@@ -45,14 +50,16 @@ export default function Sidebar({ open }) {
             return (
               <li key={path}>
                 <button
-                  onClick={() => navigate(path)}
+                  onClick={() => handleNav(path)}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150"
                   style={{
                     background: active ? 'rgba(18,166,224,0.08)' : 'transparent',
                     color: active ? '#12a6e0' : '#888888',
                     fontWeight: active ? 500 : 400,
+                    borderTop: 'none',
+                    borderRight: 'none',
+                    borderBottom: 'none',
                     borderLeft: active ? '3px solid #12a6e0' : '3px solid transparent',
-                    border: 'none',
                     cursor: 'pointer',
                     textAlign: 'left',
                   }}
@@ -85,3 +92,4 @@ export default function Sidebar({ open }) {
     </aside>
   );
 }
+

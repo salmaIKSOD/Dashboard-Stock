@@ -358,13 +358,12 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#f4f5f7]">
 
-      <Sidebar open={sidebarOpen} />
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {sidebarOpen && window.innerWidth < 1024 && (
         <div onClick={() => setSidebarOpen(false)}
           className="fixed inset-0 bg-[rgba(13,12,12,0.35)] z-20" />
       )}
-
 
       <ScrollToTop /> 
       <SidebarP
