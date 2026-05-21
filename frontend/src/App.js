@@ -169,6 +169,7 @@ const INNER_WIDTH = 56;
 function Dashboard({ sidebarOpen }) {
   const { dateDebut: defaultDebut, dateFin: defaultFin } = getDefaultDates();
   const [tableData, setTableData] = useState(null);
+  const [hasFiltered, setHasFiltered] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [currentFilters, setCurrentFilters] = useState({
@@ -183,7 +184,7 @@ function Dashboard({ sidebarOpen }) {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { loadData(currentFilters); }, []);
+  // useEffect(() => { loadData(currentFilters); }, []);
 
   const handleFilter = async (params) => {
     if (!params) {
@@ -191,9 +192,11 @@ function Dashboard({ sidebarOpen }) {
         base: BASE_PAR_DEFAUT, dateDebut: defaultDebut, dateFin: defaultFin,
         depot: null, article: null, cl_no1: null, cl_no2: null, cl_no3: null, cl_no4: null,
       };
-      setCurrentFilters(d); await loadData(d); return;
+      setCurrentFilters(d);setHasFiltered(false); setTableData(null); return;
     }
-    setCurrentFilters(params); await loadData(params);
+    setHasFiltered(true);
+    setCurrentFilters(params); 
+    await loadData(params);
   };
 
   const kpis = useMemo(() => {
