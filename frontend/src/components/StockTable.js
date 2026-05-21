@@ -147,7 +147,7 @@ export default function StockTable({ data, loading }) {
   const [sortKey, setSortKey] = useState(null);
   const [sortDir, setSortDir] = useState(null);
   const [page,    setPage]    = useState(1);
-  const PAGE_SIZE = 50;
+  const PAGE_SIZE = 31;
 
   const tableTopRef = useRef(null);
   const cols = useMemo(() => detectColumns(data), [data]);
