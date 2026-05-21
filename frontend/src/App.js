@@ -24,6 +24,12 @@ import PageTrends from './page/PageTrends';
 import PageDashboardReports from './page/PageDashboardReports';
 import PageFavorites from './page/PageFavorites';
 
+function ScrollToTop() { 
+  const { pathname } = useLocation(); 
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); },
+   [pathname]); return null; 
+}
+
 function getDefaultDates() {
   const today = new Date();
   const yyyy = today.getFullYear();
@@ -359,6 +365,8 @@ export default function App() {
           className="fixed inset-0 bg-[rgba(13,12,12,0.35)] z-20" />
       )}
 
+
+      <ScrollToTop /> 
       <SidebarP
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen(o => !o)}
