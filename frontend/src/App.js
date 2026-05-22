@@ -199,50 +199,150 @@ function Dashboard({ sidebarOpen }) {
     await loadData(params);
   };
 
-  const kpis = useMemo(() => {
-    if (!tableData || tableData.length === 0) return null;
-    const keys = Object.keys(tableData[0]);
-    const find = (...variants) =>
-      keys.find(k => variants.some(v =>
-        k.toLowerCase().replace(/[\s_()]/g, '') === v.toLowerCase().replace(/[\s_()]/g, '')
-      )) || null;
-    const kDate       = find('Date', 'DateJour', 'datejour');
-    const kEntrees    = find('TotalEntrees', 'Total Entrees', 'TotalEntree', 'totalentree');
-    const kSorties    = find('TotalSorties', 'Total Sorties', 'TotalSortie', 'totalsortie');
-    const kStockFinal = find('StockFinal', 'Stock Final', 'stockfinal');
-    const kSolde      = find('ValeurFinalePermanente', 'Valeur Finale (Permanente)', 'ValeurFinale', 'valeurfinale', 'Solde');
-    const allDates    = tableData.map(r => r[kDate] ? new Date(r[kDate]) : null).filter(Boolean);
-    const maxDate     = allDates.length ? new Date(Math.max(...allDates)) : null;
-    const lignesDernierJour = maxDate
-      ? tableData.filter(r => r[kDate] && new Date(r[kDate]).toDateString() === maxDate.toDateString())
-      : [];
-    const stockFinalDernierJour       = lignesDernierJour.reduce((s, r) => s + Number(r[kStockFinal] ?? 0), 0);
-    const valeurPermanenteDernierJour = lignesDernierJour.reduce((s, r) => s + Number(r[kSolde]      ?? 0), 0);
-    const totalEntrees = tableData.reduce((s, r) => s + Number(r[kEntrees] ?? 0), 0);
-    const totalSorties = tableData.reduce((s, r) => s + Number(r[kSorties] ?? 0), 0);
-    const entreesParJour = {}, sortiesParJour = {}, stockParJour = {};
-    tableData.forEach(r => {
-      const d = r[kDate] ? fmtDate(r[kDate]) : null; if (!d) return;
-      entreesParJour[d] = (entreesParJour[d] || 0) + Number(r[kEntrees]    ?? 0);
-      sortiesParJour[d] = (sortiesParJour[d] || 0) + Number(r[kSorties]    ?? 0);
-      stockParJour[d]   = (stockParJour[d]   || 0) + Number(r[kStockFinal] ?? 0);
-    });
-    const parse = s => { const [dd, mm, yy] = s.split('/'); return new Date(`${yy}-${mm}-${dd}`); };
-    const sortedDates = Object.keys(entreesParJour).sort((a, b) => parse(a) - parse(b));
-    return {
-      stockFinalDernierJour, valeurPermanenteDernierJour,
-      dateFinalLabel: maxDate ? fmtDate(maxDate) : '',
-      totalEntrees, totalSorties,
-      picEntreeJour: Object.entries(entreesParJour).reduce((best, [d, v]) => v > best[1] ? [d, v] : best, ['', 0]),
-      picSortieJour: Object.entries(sortiesParJour).reduce((best, [d, v]) => v > best[1] ? [d, v] : best, ['', 0]),
-      joursAvecEntrees: Object.values(entreesParJour).filter(v => v > 0).length,
-      joursAvecSorties: Object.values(sortiesParJour).filter(v => v > 0).length,
-      sparkStock:   sortedDates.map(d => stockParJour[d]   || 0),
-      sparkEntrees: sortedDates.map(d => entreesParJour[d] || 0),
-      sparkSorties: sortedDates.map(d => sortiesParJour[d] || 0),
-    };
-  }, [tableData]);
+  // const kpis = useMemo(() => {
+  //   if (!tableData || tableData.length === 0) return null;
+  //   const keys = Object.keys(tableData[0]);
+  //   const find = (...variants) =>
+  //     keys.find(k => variants.some(v =>
+  //       k.toLowerCase().replace(/[\s_()]/g, '') === v.toLowerCase().replace(/[\s_()]/g, '')
+  //     )) || null;
+  //   const kDate       = find('Date', 'DateJour', 'datejour');
+  //   const kEntrees    = find('TotalEntrees', 'Total Entrees', 'TotalEntree', 'totalentree');
+  //   const kSorties    = find('TotalSorties', 'Total Sorties', 'TotalSortie', 'totalsortie');
+  //   const kStockFinal = find('StockFinal', 'Stock Final', 'stockfinal');
+  //   const kSolde      = find('ValeurFinalePermanente', 'Valeur Finale (Permanente)', 'ValeurFinale', 'valeurfinale', 'Solde');
+  //   const allDates    = tableData.map(r => r[kDate] ? new Date(r[kDate]) : null).filter(Boolean);
+  //   const maxDate     = allDates.length ? new Date(Math.max(...allDates)) : null;
+  //   const lignesDernierJour = maxDate
+  //     ? tableData.filter(r => r[kDate] && new Date(r[kDate]).toDateString() === maxDate.toDateString())
+  //     : [];
+  //   const stockFinalDernierJour       = lignesDernierJour.reduce((s, r) => s + Number(r[kStockFinal] ?? 0), 0);
+  //   const valeurPermanenteDernierJour = lignesDernierJour.reduce((s, r) => s + Number(r[kSolde]      ?? 0), 0);
+  //   const totalEntrees = tableData.reduce((s, r) => s + Number(r[kEntrees] ?? 0), 0);
+  //   const totalSorties = tableData.reduce((s, r) => s + Number(r[kSorties] ?? 0), 0);
+  //   const entreesParJour = {}, sortiesParJour = {}, stockParJour = {};
+  //   tableData.forEach(r => {
+  //     const d = r[kDate] ? fmtDate(r[kDate]) : null; if (!d) return;
+  //     entreesParJour[d] = (entreesParJour[d] || 0) + Number(r[kEntrees]    ?? 0);
+  //     sortiesParJour[d] = (sortiesParJour[d] || 0) + Number(r[kSorties]    ?? 0);
+  //     stockParJour[d]   = (stockParJour[d]   || 0) + Number(r[kStockFinal] ?? 0);
+  //   });
+  //   const parse = s => { const [dd, mm, yy] = s.split('/'); return new Date(`${yy}-${mm}-${dd}`); };
+  //   const sortedDates = Object.keys(entreesParJour).sort((a, b) => parse(a) - parse(b));
+  //   return {
+  //     stockFinalDernierJour, valeurPermanenteDernierJour,
+  //     dateFinalLabel: maxDate ? fmtDate(maxDate) : '',
+  //     totalEntrees, totalSorties,
+  //     picEntreeJour: Object.entries(entreesParJour).reduce((best, [d, v]) => v > best[1] ? [d, v] : best, ['', 0]),
+  //     picSortieJour: Object.entries(sortiesParJour).reduce((best, [d, v]) => v > best[1] ? [d, v] : best, ['', 0]),
+  //     joursAvecEntrees: Object.values(entreesParJour).filter(v => v > 0).length,
+  //     joursAvecSorties: Object.values(sortiesParJour).filter(v => v > 0).length,
+  //     sparkStock:   sortedDates.map(d => stockParJour[d]   || 0),
+  //     sparkEntrees: sortedDates.map(d => entreesParJour[d] || 0),
+  //     sparkSorties: sortedDates.map(d => sortiesParJour[d] || 0),
+  //   };
+  // }, [tableData]);
 
+  const kpis = useMemo(() => {
+  if (!tableData || tableData.length === 0) return null;
+
+  const keys = Object.keys(tableData[0]);
+  const find = (...variants) =>
+    keys.find(k => variants.some(v =>
+      k.toLowerCase().replace(/[\s_()]/g, '') === v.toLowerCase().replace(/[\s_()]/g, '')
+    )) || null;
+
+  const kDate       = find('Date', 'DateJour', 'datejour');
+  const kEntrees    = find('TotalEntrees', 'Total Entrees', 'TotalEntree', 'totalentree');
+  const kSorties    = find('TotalSorties', 'Total Sorties', 'TotalSortie', 'totalsortie');
+  const kStockFinal = find('StockFinal', 'Stock Final', 'stockfinal');
+  const kSolde      = find('ValeurFinalePermanente', 'Valeur Finale (Permanente)', 'ValeurFinale', 'valeurfinale', 'Solde');
+
+  // ── Calcul en UN seul passage sur les données ──────────────
+  // Evite les multiples .reduce() et .forEach() qui repassent
+  // chaque fois sur tout le tableau
+  const entreesParJour  = {};
+  const sortiesParJour  = {};
+  const stockParJour    = {};
+  const valeurParJour   = {};
+
+  let totalEntrees = 0;
+  let totalSorties = 0;
+
+  for (const r of tableData) {
+    const rawDate = r[kDate];
+    if (!rawDate) continue;
+
+    // Normalisation de la date en string ISO YYYY-MM-DD
+    // (évite new Date() répété et le parse récursif)
+    const d = typeof rawDate === 'string'
+      ? rawDate.slice(0, 10)
+      : new Date(rawDate).toISOString().slice(0, 10);
+
+    const e  = Number(r[kEntrees]    ?? 0);
+    const s  = Number(r[kSorties]    ?? 0);
+    const sf = Number(r[kStockFinal] ?? 0);
+    const v  = Number(r[kSolde]      ?? 0);
+
+    totalEntrees += e;
+    totalSorties += s;
+
+    entreesParJour[d] = (entreesParJour[d] || 0) + e;
+    sortiesParJour[d] = (sortiesParJour[d] || 0) + s;
+    stockParJour[d]   = (stockParJour[d]   || 0) + sf;
+    valeurParJour[d]  = (valeurParJour[d]  || 0) + v;
+  }
+
+  // Tri des dates (ISO → tri alphabétique = tri chronologique)
+  const sortedDates = Object.keys(entreesParJour).sort();
+
+  if (sortedDates.length === 0) return null;
+
+  const maxDateISO = sortedDates[sortedDates.length - 1];
+
+  // Pic d'entrées et sorties
+  let picEntreeDate = '', picEntreeVal = 0;
+  let picSortieDate = '', picSortieVal = 0;
+  let joursAvecEntrees = 0;
+  let joursAvecSorties = 0;
+
+  for (const d of sortedDates) {
+    const e = entreesParJour[d];
+    const s = sortiesParJour[d];
+    if (e > 0) {
+      joursAvecEntrees++;
+      if (e > picEntreeVal) { picEntreeVal = e; picEntreeDate = d; }
+    }
+    if (s > 0) {
+      joursAvecSorties++;
+      if (s > picSortieVal) { picSortieVal = s; picSortieDate = d; }
+    }
+  }
+
+  // Formatage des dates pour affichage (DD/MM/YYYY)
+  const fmtISO = (iso) => {
+    if (!iso) return '';
+    const [y, m, dd] = iso.split('-');
+    return `${dd}/${m}/${y}`;
+  };
+
+  return {
+    stockFinalDernierJour:       stockParJour[maxDateISO]  || 0,
+    valeurPermanenteDernierJour: valeurParJour[maxDateISO] || 0,
+    dateFinalLabel: fmtISO(maxDateISO),
+    totalEntrees,
+    totalSorties,
+    picEntreeJour: [fmtISO(picEntreeDate), picEntreeVal],
+    picSortieJour: [fmtISO(picSortieDate), picSortieVal],
+    joursAvecEntrees,
+    joursAvecSorties,
+    // Limiter les sparklines à 60 points max pour éviter
+    // de surcharger le rendu SVG sur 365 jours
+    sparkStock:   sortedDates.slice(-60).map(d => stockParJour[d]   || 0),
+    sparkEntrees: sortedDates.slice(-60).map(d => entreesParJour[d] || 0),
+    sparkSorties: sortedDates.slice(-60).map(d => sortiesParJour[d] || 0),
+  };
+}, [tableData]);
   return (
     <>
       <Filters
