@@ -1,5 +1,5 @@
-//  l'encien V3 avec base StockAnalytics //////////////////////////////////////////////////////////////////
-// ── backend/Server/routes/stock.js — version optimisée ───────
+// //  l'encien V3 avec base StockAnalytics //////////////////////////////////////////////////////////////////
+// // ── backend/Server/routes/stock.js — version optimisée ───────
 
 const express = require('express');
 const router  = express.Router();
@@ -217,7 +217,7 @@ module.exports = router;
 
 
 
-//  l'encien V2 avec base StockAnalytics //////////////////////////////////////////////////////////////////
+// //  l'encien V2 avec base StockAnalytics //////////////////////////////////////////////////////////////////
 // const express = require('express');
 // const router  = express.Router();
 // const { getPool, sql } = require('../../db');
