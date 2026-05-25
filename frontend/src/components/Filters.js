@@ -353,19 +353,25 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
           {/* Badges */}
           <div className="flex items-center gap-[0.45rem] flex-wrap sm:ml-auto">
             {famille && (
-              <div className="flex items-center gap-[0.4rem] bg-[rgba(124,77,255,0.07)] border border-[rgba(124,77,255,0.20)] rounded-full py-[0.28rem] px-[0.7rem]">
-                <Tag size={10} className="text-[#7c4dff]" />
-                <span className="text-[#7c4dff] text-[11px] font-semibold">
-                  {familles.find(f => f.value === famille)?.label?.split(' — ')[1] || famille}
-                </span>
-              </div>
+              // <div className="flex items-center gap-[0.4rem] bg-[rgba(124,77,255,0.07)] border border-[rgba(124,77,255,0.20)] rounded-full py-[0.28rem] px-[0.7rem]">
+              //   <Tag size={10} className="text-[#7c4dff]" />
+              //   <span className="text-[#7c4dff] text-[11px] font-semibold">
+              //     {familles.find(f => f.value === famille)?.label?.split(' — ')[1] || famille}
+              //   </span>
+              // </div>
+          <div className="flex items-center gap-[0.4rem] bg-[rgba(18,166,224,0.07)] border border-[rgba(18,166,224,0.20)] rounded-full py-[0.28rem] px-[0.7rem]">
+            <Tag size={10} className="text-[#12a6e0]" />
+            <span className="text-[#12a6e0] text-[11px] font-semibold">
+              {familles.find(f => f.value === famille)?.label?.split(' — ')[1] || famille}
+            </span>
+          </div>
             )}
-            {base && (
+            {/* {base && (
               <div className="flex items-center gap-[0.4rem] bg-[rgba(1,214,58,0.08)] border border-[rgba(1,214,58,0.25)] rounded-full py-[0.28rem] px-[0.7rem]">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#01d63a] animate-[pulse-dot_2s_ease-in-out_infinite]" />
                 <span className="text-[#01a82e] text-[11px] font-semibold">{base}</span>
               </div>
-            )}
+            )} */}
           </div>
         </div>
 

@@ -122,9 +122,40 @@ function useBreakpoint() {
   };
 }
 
+// function KpiCard({ title, value, unit, bottomContent, icon, iconBg, iconColor, valueColor, sparkColor, sparkData }) {
+//   return (
+//     <div className="bg-white border border-[#eeeeee] rounded-2xl px-6 py-5 shadow-[0_1px_8px_rgba(0,0,0,0.06)] flex flex-col flex-1 min-w-0">
+//       <div className="flex items-start justify-between gap-4">
+//         <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+//           style={{ background: iconBg, color: iconColor }}>
+//           {icon}
+//         </div>
+//         <div className="flex-1 min-w-0">
+//           <p className="text-[#888888] text-[0.8125rem] font-medium mb-[0.3rem] mt-0">{title}</p>
+//           <p className="text-[1.75rem] font-bold leading-none tracking-[-0.02em] m-0" style={{ color: valueColor }}>
+//             {fmtNum(value)}
+//           </p>
+//           <p className="text-[#bbbbbb] text-xs mt-[0.2rem] mb-0">{unit}</p>
+//         </div>
+//         <div className="pt-2 shrink-0">
+//           <Sparkline data={sparkData} color={sparkColor} />
+//         </div>
+//       </div>
+//       <div className="border-t border-[#f5f5f5] mt-[0.875rem] pt-[0.625rem]">
+//         {bottomContent}
+//       </div>
+//     </div>
+//   );
+// }
 function KpiCard({ title, value, unit, bottomContent, icon, iconBg, iconColor, valueColor, sparkColor, sparkData }) {
   return (
-    <div className="bg-white border border-[#eeeeee] rounded-2xl px-6 py-5 shadow-[0_1px_8px_rgba(0,0,0,0.06)] flex flex-col flex-1 min-w-0">
+    <div
+      className="bg-white rounded-2xl px-6 py-5 flex flex-col flex-1 min-w-0"
+      style={{
+        border: `1.5px solid ${iconBg.replace('0.10', '0.18')}`,
+        boxShadow: `0 2px 12px ${iconBg.replace('0.10', '0.06')}`,
+      }}
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
           style={{ background: iconBg, color: iconColor }}>
@@ -168,223 +199,6 @@ const SIDEBAR_WIDTH = 240;
 const INNER_WIDTH = 56;
 
 // ── Dashboard principal
-// function Dashboard({ sidebarOpen }) {
-//   const { dateDebut: defaultDebut, dateFin: defaultFin } = getDefaultDates();
-//   const [tableData, setTableData] = useState(null);
-//   const [hasFiltered, setHasFiltered] = useState(false);
-//   const [loading, setLoading] = useState(false);
-//   const [error, setError] = useState(null);
-//   const [currentFilters, setCurrentFilters] = useState({
-//     base: BASE_PAR_DEFAUT, dateDebut: defaultDebut, dateFin: defaultFin,
-//     depot: null, article: null, cl_no1: null, cl_no2: null, cl_no3: null, cl_no4: null,
-//   });
-
-//   const loadData = async (params) => {
-//     setLoading(true); setError(null);
-//     try { const data = await fetchStock(params); setTableData(data); }
-//     catch (err) { console.error(err); setError(err.message); setTableData(null); }
-//     finally { setLoading(false); }
-//   };
-
-//   // useEffect(() => { loadData(currentFilters); }, []);
-
-//   const handleFilter = async (params) => {
-//     if (!params) {
-//       const d = {
-//         base: BASE_PAR_DEFAUT, dateDebut: defaultDebut, dateFin: defaultFin,
-//         depot: null, article: null, cl_no1: null, cl_no2: null, cl_no3: null, cl_no4: null,
-//       };
-//       setCurrentFilters(d);setHasFiltered(false); setTableData(null); return;
-//     }
-//     setHasFiltered(true);
-//     setCurrentFilters(params); 
-//     await loadData(params);
-//   };
-
-//   const kpis = useMemo(() => {
-//   if (!tableData || tableData.length === 0) return null;
-
-//   const keys = Object.keys(tableData[0]);
-//   const find = (...variants) =>
-//     keys.find(k => variants.some(v =>
-//       k.toLowerCase().replace(/[\s_()]/g, '') === v.toLowerCase().replace(/[\s_()]/g, '')
-//     )) || null;
-
-//   const kDate       = find('Date', 'DateJour', 'datejour');
-//   const kEntrees    = find('TotalEntrees', 'Total Entrees', 'TotalEntree', 'totalentree');
-//   const kSorties    = find('TotalSorties', 'Total Sorties', 'TotalSortie', 'totalsortie');
-//   const kStockFinal = find('StockFinal', 'Stock Final', 'stockfinal');
-//   const kSolde      = find('ValeurFinalePermanente', 'Valeur Finale (Permanente)', 'ValeurFinale', 'valeurfinale', 'Solde');
-
-//   // ── Calcul en UN seul passage sur les données ──────────────
-//   // Evite les multiples .reduce() et .forEach() qui repassent
-//   // chaque fois sur tout le tableau
-//   const entreesParJour  = {};
-//   const sortiesParJour  = {};
-//   const stockParJour    = {};
-//   const valeurParJour   = {};
-
-//   let totalEntrees = 0;
-//   let totalSorties = 0;
-
-//   for (const r of tableData) {
-//     const rawDate = r[kDate];
-//     if (!rawDate) continue;
-
-//     // Normalisation de la date en string ISO YYYY-MM-DD
-//     // (évite new Date() répété et le parse récursif)
-//     const d = typeof rawDate === 'string'
-//       ? rawDate.slice(0, 10)
-//       : new Date(rawDate).toISOString().slice(0, 10);
-
-//     const e  = Number(r[kEntrees]    ?? 0);
-//     const s  = Number(r[kSorties]    ?? 0);
-//     const sf = Number(r[kStockFinal] ?? 0);
-//     const v  = Number(r[kSolde]      ?? 0);
-
-//     totalEntrees += e;
-//     totalSorties += s;
-
-//     entreesParJour[d] = (entreesParJour[d] || 0) + e;
-//     sortiesParJour[d] = (sortiesParJour[d] || 0) + s;
-//     stockParJour[d]   = (stockParJour[d]   || 0) + sf;
-//     valeurParJour[d]  = (valeurParJour[d]  || 0) + v;
-//   }
-
-//   // Tri des dates (ISO → tri alphabétique = tri chronologique)
-//   const sortedDates = Object.keys(entreesParJour).sort();
-
-//   if (sortedDates.length === 0) return null;
-
-//   const maxDateISO = sortedDates[sortedDates.length - 1];
-
-//   // Pic d'entrées et sorties
-//   let picEntreeDate = '', picEntreeVal = 0;
-//   let picSortieDate = '', picSortieVal = 0;
-//   let joursAvecEntrees = 0;
-//   let joursAvecSorties = 0;
-
-//   for (const d of sortedDates) {
-//     const e = entreesParJour[d];
-//     const s = sortiesParJour[d];
-//     if (e > 0) {
-//       joursAvecEntrees++;
-//       if (e > picEntreeVal) { picEntreeVal = e; picEntreeDate = d; }
-//     }
-//     if (s > 0) {
-//       joursAvecSorties++;
-//       if (s > picSortieVal) { picSortieVal = s; picSortieDate = d; }
-//     }
-//   }
-
-//   // Formatage des dates pour affichage (DD/MM/YYYY)
-//   const fmtISO = (iso) => {
-//     if (!iso) return '';
-//     const [y, m, dd] = iso.split('-');
-//     return `${dd}/${m}/${y}`;
-//   };
-
-//   return {
-//     stockFinalDernierJour:       stockParJour[maxDateISO]  || 0,
-//     valeurPermanenteDernierJour: valeurParJour[maxDateISO] || 0,
-//     dateFinalLabel: fmtISO(maxDateISO),
-//     totalEntrees,
-//     totalSorties,
-//     picEntreeJour: [fmtISO(picEntreeDate), picEntreeVal],
-//     picSortieJour: [fmtISO(picSortieDate), picSortieVal],
-//     joursAvecEntrees,
-//     joursAvecSorties,
-//     // Limiter les sparklines à 60 points max pour éviter
-//     // de surcharger le rendu SVG sur 365 jours
-//     sparkStock:   sortedDates.slice(-60).map(d => stockParJour[d]   || 0),
-//     sparkEntrees: sortedDates.slice(-60).map(d => entreesParJour[d] || 0),
-//     sparkSorties: sortedDates.slice(-60).map(d => sortiesParJour[d] || 0),
-//   };
-// }, [tableData]);
-//   return (
-//     <>
-//       <Filters
-//         onFilter={handleFilter}
-//         initialBase={BASE_PAR_DEFAUT}
-//         initialDateDebut={defaultDebut}
-//         initialDateFin={defaultFin}
-//       />
-
-//       {error && (
-//         <div className="bg-[rgba(229,57,53,0.06)] border border-[rgba(229,57,53,0.20)] rounded-xl px-5 py-4 text-[#c62828] text-sm flex items-center gap-3">
-//           <div className="w-2 h-2 rounded-full bg-[#e53935] shrink-0" />
-//           <span>{error}</span>
-//         </div>
-//       )}
-
-//       {kpis && !loading && (
-//         <KpiGrid>
-//           <KpiCard
-//             title="Stock total" value={kpis.stockFinalDernierJour} unit="Unités"
-//             icon={<IconStock />} iconBg="rgba(18,166,224,0.10)" iconColor="#12a6e0"
-//             valueColor="#12a6e0" sparkColor="#12a6e0" sparkData={kpis.sparkStock}
-//             bottomContent={
-//               <p className="m-0 text-[#aaaaaa] text-xs">
-//                 Valeur permanente au{' '}
-//                 <span className="text-[#555555] font-semibold">{kpis.dateFinalLabel}</span>
-//                 {' '}:{' '}
-//                 <span className="text-[#12a6e0] font-semibold">{fmtNum(kpis.valeurPermanenteDernierJour)} MAD</span>
-//               </p>
-//             }
-//           />
-//           <KpiCard
-//             title="Entrées totales" value={kpis.totalEntrees} unit="Unités sur la période"
-//             icon={<IconEntrees />} iconBg="rgba(1,168,46,0.10)" iconColor="#01a82e"
-//             valueColor="#01a82e" sparkColor="#01a82e" sparkData={kpis.sparkEntrees}
-//             bottomContent={
-//               <p className="m-0 text-[#aaaaaa] text-xs">
-//                 {kpis.joursAvecEntrees > 0 ? (
-//                   <>
-//                     Pic le{' '}
-//                     <span className="text-[#555555] font-semibold">{kpis.picEntreeJour[0]}</span>
-//                     {' '}:{' '}
-//                     <span className="text-[#01a82e] font-semibold">{fmtNum(kpis.picEntreeJour[1])} unités</span>
-//                     {' · '}
-//                     <span className="text-[#aaaaaa]">{kpis.joursAvecEntrees} jour{kpis.joursAvecEntrees > 1 ? 's' : ''} actif{kpis.joursAvecEntrees > 1 ? 's' : ''}</span>
-//                   </>
-//                 ) : <span>Aucune entrée sur la période</span>}
-//               </p>
-//             }
-//           />
-//           <KpiCard
-//             title="Sorties totales" value={kpis.totalSorties} unit="Unités sur la période"
-//             icon={<IconSorties />} iconBg="rgba(229,57,53,0.10)" iconColor="#e53935"
-//             valueColor="#e53935" sparkColor="#e53935" sparkData={kpis.sparkSorties}
-//             bottomContent={
-//               <p className="m-0 text-[#aaaaaa] text-xs">
-//                 {kpis.joursAvecSorties > 0 ? (
-//                   <>
-//                     Pic le{' '}
-//                     <span className="text-[#555555] font-semibold">{kpis.picSortieJour[0]}</span>
-//                     {' '}:{' '}
-//                     <span className="text-[#e53935] font-semibold">{fmtNum(kpis.picSortieJour[1])} unités</span>
-//                     {' · '}
-//                     <span className="text-[#aaaaaa]">{kpis.joursAvecSorties} jour{kpis.joursAvecSorties > 1 ? 's' : ''} actif{kpis.joursAvecSorties > 1 ? 's' : ''}</span>
-//                   </>
-//                 ) : <span>Aucune sortie sur la période</span>}
-//               </p>
-//             }
-//           />
-//         </KpiGrid>
-//       )}
-
-//       {(loading || tableData !== null) && <StockTable data={tableData} loading={loading} />}
-
-//       {!loading && tableData !== null && tableData.length === 0 && !error && (
-//         <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-//           <p className="text-[#888888] text-sm font-medium m-0">
-//             Aucune donnée pour cette période ou ces filtres.
-//           </p>
-//         </div>
-//       )}
-//     </>
-//   );
-// }
 function Dashboard({ sidebarOpen }) {
   // ← plus de useState local ; tout vient du contexte global
   const {
@@ -431,57 +245,6 @@ function Dashboard({ sidebarOpen }) {
   };
  
   // kpis — identique à l'original, rien ne change ici
-  // const kpis = useMemo(() => {
-  //   if (!tableData || tableData.length === 0) return null;
-  //   const keys = Object.keys(tableData[0]);
-  //   const find = (...variants) =>
-  //     keys.find(k => variants.some(v =>
-  //       k.toLowerCase().replace(/[\s_()]/g, '') === v.toLowerCase().replace(/[\s_()]/g, '')
-  //     )) || null;
-  //   const kDate       = find('Date', 'DateJour', 'datejour');
-  //   const kEntrees    = find('TotalEntrees', 'Total Entrees', 'TotalEntree', 'totalentree');
-  //   const kSorties    = find('TotalSorties', 'Total Sorties', 'TotalSortie', 'totalsortie');
-  //   const kStockFinal = find('StockFinal', 'Stock Final', 'stockfinal');
-  //   const kSolde      = find('ValeurFinalePermanente', 'Valeur Finale (Permanente)', 'ValeurFinale', 'valeurfinale', 'Solde');
-  //   const entreesParJour = {}, sortiesParJour = {}, stockParJour = {}, valeurParJour = {};
-  //   let totalEntrees = 0, totalSorties = 0;
-  //   for (const r of tableData) {
-  //     const rawDate = r[kDate]; 
-  //     if (!rawDate) continue;
-  //     const d = typeof rawDate === 'string' ? rawDate.slice(0, 10) : new Date(rawDate).toISOString().slice(0, 10);
-  //     const e = Number(r[kEntrees] ?? 0), s = Number(r[kSorties] ?? 0);
-  //     const sf = Number(r[kStockFinal] ?? 0), v = Number(r[kSolde] ?? 0);
-  //     totalEntrees += e; totalSorties += s;
-  //     entreesParJour[d] = (entreesParJour[d] || 0) + e;
-  //     sortiesParJour[d] = (sortiesParJour[d] || 0) + s;
-  //     stockParJour[d]   = (stockParJour[d]   || 0) + sf;
-  //     valeurParJour[d]  = (valeurParJour[d]  || 0) + v;
-  //   }
-  //   const sortedDates = Object.keys(entreesParJour).sort();
-  //   if (sortedDates.length === 0) return null;
-  //   const maxDateISO = sortedDates[sortedDates.length - 1];
-  //   let picEntreeDate = '', picEntreeVal = 0, picSortieDate = '', picSortieVal = 0;
-  //   let joursAvecEntrees = 0, joursAvecSorties = 0;
-  //   for (const d of sortedDates) {
-  //     const e = entreesParJour[d], s = sortiesParJour[d];
-  //     if (e > 0) { joursAvecEntrees++; if (e > picEntreeVal) { picEntreeVal = e; picEntreeDate = d; } }
-  //     if (s > 0) { joursAvecSorties++; if (s > picSortieVal) { picSortieVal = s; picSortieDate = d; } }
-  //   }
-  //   const fmtISO = (iso) => { if (!iso) return ''; const [y, m, dd] = iso.split('-'); return `${dd}/${m}/${y}`; };
-  //   return {
-  //     stockFinalDernierJour: stockParJour[maxDateISO] || 0,
-  //     valeurPermanenteDernierJour: valeurParJour[maxDateISO] || 0,
-  //     dateFinalLabel: fmtISO(maxDateISO),
-  //     totalEntrees, totalSorties,
-  //     picEntreeJour: [fmtISO(picEntreeDate), picEntreeVal],
-  //     picSortieJour: [fmtISO(picSortieDate), picSortieVal],
-  //     joursAvecEntrees, joursAvecSorties,
-  //     sparkStock:   sortedDates.slice(-60).map(d => stockParJour[d]   || 0),
-  //     sparkEntrees: sortedDates.slice(-60).map(d => entreesParJour[d] || 0),
-  //     sparkSorties: sortedDates.slice(-60).map(d => sortiesParJour[d] || 0),
-  //   };
-  // }, [tableData]);
- 
   const kpis = useMemo(() => {
   if (!tableData || tableData.length === 0) return null;
 

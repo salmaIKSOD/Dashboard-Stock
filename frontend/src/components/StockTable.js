@@ -689,21 +689,6 @@ export default function StockTable({ data, loading }) {
           onClick={() => exportCSV(sorted, cols)}
           className="
             flex items-center gap-2 px-3.5 py-2 rounded-lg text-[0.75rem] font-semibold
-            bg-white text-[#12a6e0]
-            border border-[rgba(18,166,224,0.35)]
-            shadow-[0_1px_4px_rgba(18,166,224,0.12)]
-            cursor-pointer transition-all duration-150
-            hover:bg-[rgba(18,166,224,0.06)] hover:border-[rgba(18,166,224,0.55)] hover:shadow-[0_2px_8px_rgba(18,166,224,0.18)]
-            active:scale-[0.98]
-          "
-        >
-          <Download size={13} className="text-[#12a6e0]" />
-          Exporter CSV
-        </button> */}
-        <button
-          onClick={() => exportCSV(sorted, cols)}
-          className="
-            flex items-center gap-2 px-3.5 py-2 rounded-lg text-[0.75rem] font-semibold
             bg-white text-[#1a7a3f]
             border border-[rgba(26,122,63,0.35)]
             shadow-[0_1px_4px_rgba(26,122,63,0.12)]
@@ -717,6 +702,16 @@ export default function StockTable({ data, loading }) {
             <path d="M14 2v6h6" stroke="#1a7a3f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M8 13h2.5M8 17h2.5M13.5 13H16M13.5 17H16" stroke="#1a7a3f" strokeWidth="1.5" strokeLinecap="round"/>
             <path d="M11 13v4M13.5 13v4" stroke="#1a7a3f" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+          Exporter CSV
+        </button> */}
+       <button
+          onClick={() => exportCSV(sorted, cols)}
+          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-[12px] font-semibold bg-[#f0fdf4] text-[#15803d] border border-[rgba(21,128,61,0.10)] cursor-pointer transition-all duration-150 hover:bg-[#dcfce7] hover:shadow-[0_1px_6px_rgba(21,128,61,0.18)] active:scale-[0.97]"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+            <path d="M12 16l-5-5h3V4h4v7h3l-5 5z" fill="#15803d"/>
+            <path d="M5 20h14" stroke="#15803d" strokeWidth="2" strokeLinecap="round"/>
           </svg>
           Exporter CSV
         </button>

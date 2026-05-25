@@ -4,8 +4,9 @@ import {
   Menu, X, Bell, UserCircle2,
   LayoutDashboard, PackageSearch, ArrowDownUp,
   BarChart3, Settings, Boxes, Warehouse,
-  BellRing, BrainCircuit, FileText, TrendingUp, Star,
+  BellRing, BrainCircuit, FileText, TrendingUp, Star,Database
 } from 'lucide-react';
+import { useDashboard } from '../context/DashboardContext';
 
 const PAGE_META = {
   '/':                       { title: 'Stock Dashboard',  icon: TrendingUp      },
@@ -29,6 +30,10 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
   const [notifOpen, setNotifOpen] = useState(false);
   const [userOpen,  setUserOpen]  = useState(false);
   const location = useLocation();
+  const { currentFilters } = useDashboard();
+
+  const isDashboard = location.pathname === '/' || location.pathname.startsWith('/dashboard');
+  const activeBase = currentFilters?.base;
 
   // Match longest path first for nested routes
   const meta = Object.entries(PAGE_META)
@@ -96,6 +101,15 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
         {/* ── Droite ── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', position: 'relative' }}>
 
+          {/* !isDashboard && */}
+          { activeBase && (
+            <div className="flex items-center gap-1.5 bg-[rgba(1,214,58,0.08)] border border-[rgba(1,214,58,0.25)] rounded-full py-1 px-2.5">
+              <Database size={11} className="text-[#01a82e]" />
+              <span className="text-[#01a82e] text-[11px] font-bold uppercase tracking-wide">
+                {activeBase}
+              </span>
+            </div>
+          )}
           {/* Notifications */}
           <div style={{ position: 'relative' }}>
             <button
