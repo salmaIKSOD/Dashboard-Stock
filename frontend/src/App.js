@@ -16,7 +16,7 @@ import PageArticles from './pages/PageArticles';
 import PageDepots from './pages/PageDepots';
 import PageAnalyses from './pages/PageAnalyses';
 import PageAlertes from './pages/PageAlertes';
-import PagePrevisions from './pages/PagePrevisions';
+// import PagePrevisions from './pages/PagePrevisions';
 import PageRapports from './pages/PageRapports';
 import PageParametres from './pages/PageParametres';
 
@@ -25,6 +25,7 @@ import PageCharts from './page/PageCharts';
 import PageTrends from './page/PageTrends';
 import PageDashboardReports from './page/PageDashboardReports';
 import PageFavorites from './page/PageFavorites';
+import AIPrevisions from './pages/AIPrevisions';
 
 function ScrollToTop() { 
   const { pathname } = useLocation(); 
@@ -499,7 +500,7 @@ export default function App() {
           <Route path="/depots"           element={<PageDepots />} />
           <Route path="/analyses"         element={<PageAnalyses />} />
           <Route path="/alertes"          element={<PageAlertes />} />
-          <Route path="/previsions"       element={<PagePrevisions />} />
+          <Route path="/previsions"       element={<AIPrevisions />} />
           <Route path="/rapports"         element={<PageRapports />} />
           <Route path="/parametres"       element={<PageParametres />} />
         </Routes>

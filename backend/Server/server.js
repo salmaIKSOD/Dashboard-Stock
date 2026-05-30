@@ -19,6 +19,10 @@ app.get('/', (req, res) => {
   res.json({ status: 'ok', message: 'StockAnalytics API en ligne' });
 });
 
+// backend/Server/server.js  — ajouter ces 2 lignes
+const predictionsRouter = require("./routes/predictions");
+app.use("/api/predictions", predictionsRouter);
+
 app.listen(PORT, () => {
   console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
 });
