@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   LineChart, Line,
@@ -9,10 +9,13 @@ import {
   BarChart3, TrendingUp, PieChart as PieIcon, DollarSign,
   CalendarDays, Database, Layers, Tag, PackageX,
   ArrowUpRight, ArrowDownRight,
-  Activity, Wallet,
+  Activity, Wallet, Loader2,
 } from 'lucide-react';
 import { useDashboard } from '../context/DashboardContext';
+import { fetchMouvements } from '../api/stockApi';
 
+// ─────────────────────────────────────────────────────────────
+//  PALETTE
 // ─────────────────────────────────────────────────────────────
 const C = {
   blue:        '#12a6e0',
@@ -45,12 +48,26 @@ const CAT_COLORS = [
 ];
 
 // ─────────────────────────────────────────────────────────────
+//  UTILITAIRES
+// ─────────────────────────────────────────────────────────────
 const toNum = (v) => { const n = Number(v); return isNaN(n) ? 0 : n; };
+
+/**
+ * FIX FUSEAU HORAIRE : on coupe la string ISO directement
+ * sans passer par new Date() pour éviter le décalage UTC→local.
+ */
+const toISODate = (raw) => {
+  if (!raw) return '';
+  if (typeof raw === 'string') return raw.slice(0, 10);
+  // Date object from mssql driver
+  if (raw instanceof Date) return raw.toISOString().slice(0, 10);
+  return String(raw).slice(0, 10);
+};
 
 const fmtDate = (d) => {
   if (!d) return '';
-  const s = typeof d === 'string' ? d : new Date(d).toISOString();
-  const [, m, dd] = s.slice(0, 10).split('-');
+  const iso = toISODate(d);
+  const [, m, dd] = iso.split('-');
   return `${dd}/${m}`;
 };
 
@@ -75,7 +92,65 @@ const mkFind = (keys) => (...variants) =>
   ) || null;
 
 // ─────────────────────────────────────────────────────────────
-// Tooltip générique
+//  HOOK — charge les mouvements depuis SP_GetMouvements
+//  Séparé de tableData (stock journalier) pour éviter les
+//  doublons causés par les lignes de report (jours sans mvt).
+// ─────────────────────────────────────────────────────────────
+function useMouvementsData(filters) {
+  const [data,    setData]    = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState(null);
+
+  // Clé stable pour éviter les appels dupliqués
+  const keyRef = useRef('');
+
+  useEffect(() => {
+    if (!filters?.base) { setData(null); return; }
+
+    const key = JSON.stringify({
+      base:           filters.base,
+      dateDebut:      filters.dateDebut   || null,
+      dateFin:        filters.dateFin     || null,
+      depot:          filters.depot       || null,
+      article:        filters.article     || null,
+      fa_codefamille: filters.fa_codefamille || null,
+      cl_no1:         filters.cl_no1      || null,
+      cl_no2:         filters.cl_no2      || null,
+      cl_no3:         filters.cl_no3      || null,
+      cl_no4:         filters.cl_no4      || null,
+    });
+
+    if (key === keyRef.current) return; // déjà chargé pour ces filtres
+    keyRef.current = key;
+
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+
+    fetchMouvements({
+      base:           filters.base,
+      dateDebut:      filters.dateDebut   || undefined,
+      dateFin:        filters.dateFin     || undefined,
+      depot:          filters.depot       || undefined,
+      article:        filters.article     || undefined,
+      fa_codefamille: filters.fa_codefamille || undefined,
+      cl_no1:         filters.cl_no1      || undefined,
+      cl_no2:         filters.cl_no2      || undefined,
+      cl_no3:         filters.cl_no3      || undefined,
+      cl_no4:         filters.cl_no4      || undefined,
+    })
+      .then(d  => { if (!cancelled) setData(d); })
+      .catch(e => { if (!cancelled) setError(e.message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [filters]);
+
+  return { data, loading, error };
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Tooltip générique
 // ─────────────────────────────────────────────────────────────
 function Tip({ active, payload, label, isValeur = false }) {
   if (!active || !payload?.length) return null;
@@ -100,7 +175,7 @@ function Tip({ active, payload, label, isValeur = false }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Chip / Pill
+//  Chip
 // ─────────────────────────────────────────────────────────────
 function Chip({ color, bg, border, children }) {
   return (
@@ -116,7 +191,7 @@ function Chip({ color, bg, border, children }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Onglets
+//  Tabs
 // ─────────────────────────────────────────────────────────────
 function Tabs({ tabs, value, onChange }) {
   return (
@@ -140,40 +215,47 @@ function Tabs({ tabs, value, onChange }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Section card — flex column pour que l'inner puisse grandir
+//  Section card
 // ─────────────────────────────────────────────────────────────
-function Section({ color, icon: Icon, title, subtitle, children, stretch = false }) {
+function Section({ color, icon: Icon, title, subtitle, children, stretch = false, loading = false }) {
   return (
     <div style={{
-      background: C.white,
-      border: `1px solid ${C.border}`,
-      borderRadius: 14,
-      overflow: 'hidden',
+      background: C.white, border: `1px solid ${C.border}`,
+      borderRadius: 14, overflow: 'hidden',
       boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-      // Quand stretch=true la card prend toute la hauteur du grid row
       display: stretch ? 'flex' : 'block',
       flexDirection: stretch ? 'column' : undefined,
     }}>
       <div style={{
         display: 'flex', alignItems: 'center', gap: 10,
-        padding: '14px 20px',
-        borderBottom: `1px solid ${C.borderLight}`,
-        background: C.white,
-        flexShrink: 0,
+        padding: '14px 20px', borderBottom: `1px solid ${C.borderLight}`,
+        background: C.white, flexShrink: 0,
       }}>
         <div style={{
           width: 34, height: 34, borderRadius: 9,
           background: `${color}12`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <Icon size={16} color={color} />
+          {loading
+            ? <Loader2 size={16} color={color} style={{ animation:'spin 1s linear infinite' }} />
+            : <Icon size={16} color={color} />
+          }
         </div>
-        <div>
+        <div style={{ flex: 1 }}>
           <p style={{ fontSize: 13, fontWeight: 600, color: C.text, margin: 0 }}>{title}</p>
           {subtitle && (
             <p style={{ fontSize: 11, color: C.textLight, margin: '2px 0 0' }}>{subtitle}</p>
           )}
         </div>
+        {loading && (
+          <span style={{
+            fontSize: 11, color: C.textMuted, fontStyle: 'italic',
+            display: 'flex', alignItems: 'center', gap: 5,
+          }}>
+            <Loader2 size={11} color={C.textMuted} />
+            Chargement…
+          </span>
+        )}
       </div>
       <div style={{
         padding: '18px 20px',
@@ -188,7 +270,7 @@ function Section({ color, icon: Icon, title, subtitle, children, stretch = false
 }
 
 // ─────────────────────────────────────────────────────────────
-// StatRow
+//  StatRow
 // ─────────────────────────────────────────────────────────────
 function StatRow({ items }) {
   return (
@@ -231,7 +313,7 @@ function StatRow({ items }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Empty
+//  Empty / Skeleton
 // ─────────────────────────────────────────────────────────────
 function Empty() {
   return (
@@ -247,29 +329,32 @@ function Empty() {
   );
 }
 
-// ═════════════════════════════════════════════════════════════
-//  BANDEAU CONTEXTE
-// ═════════════════════════════════════════════════════════════
+function Skeleton({ height = 240 }) {
+  return (
+    <div style={{
+      height, borderRadius: 10, overflow: 'hidden',
+      background: `linear-gradient(90deg, ${C.borderLight} 25%, #eaeaea 50%, ${C.borderLight} 75%)`,
+      backgroundSize: '200% 100%',
+      animation: 'shimmer 1.4s infinite',
+    }}>
+      <style>{`@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }`}</style>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Banner contexte
+// ─────────────────────────────────────────────────────────────
 function Banner({ filters }) {
-  const anneeDebut = filters?.dateDebut ? filters.dateDebut.split('-')[0] : null;
-  const anneeFin   = filters?.dateFin   ? filters.dateFin.split('-')[0]   : null;
-
-  const short = (d) => {
-    if (!d) return '';
-    const [, m, dd] = d.split('-');
-    return `${dd}/${m}`;
-  };
-
- 
   const periodeLabel = () => {
-  if (!filters?.dateDebut || !filters?.dateFin) return null;
-  const fullShort = (d) => {
-    if (!d) return '';
-    const [y, m, dd] = d.split('-');
-    return `${dd}/${m}/${y}`;
+    if (!filters?.dateDebut || !filters?.dateFin) return null;
+    const fullShort = (d) => {
+      if (!d) return '';
+      const [y, m, dd] = d.split('-');
+      return `${dd}/${m}/${y}`;
+    };
+    return `${fullShort(filters.dateDebut)} → ${fullShort(filters.dateFin)}`;
   };
-  return `${fullShort(filters.dateDebut)} → ${fullShort(filters.dateFin)}`;
-};
 
   return (
     <div style={{
@@ -323,38 +408,48 @@ function Banner({ filters }) {
 
 // ═════════════════════════════════════════════════════════════
 //  G1 — Évolution entrées / sorties
+//  SOURCE : fetchMouvements (SP_GetMouvements)
+//  ✅ FIX : plus de doublons liés aux lignes de report de stock
 // ═════════════════════════════════════════════════════════════
-function G1({ data }) {
+function G1({ data, loading }) {
   const { pts, totE, totS } = useMemo(() => {
     if (!data?.length) return { pts:[], totE:0, totS:0 };
+
     const find = mkFind(Object.keys(data[0]));
-    const kD = find('Date','DateJour');
-    const kE = find('TotalEntrees','Total Entrees','TotalEntree');
-    const kS = find('TotalSorties','Total Sorties','TotalSortie');
+    // SP_GetMouvements retourne : Date | Total Entrees | Total Sorties
+    const kD = find('Date', 'DateJour');
+    const kE = find('Total Entrees', 'TotalEntrees', 'TotalEntree');
+    const kS = find('Total Sorties', 'TotalSorties', 'TotalSortie');
+
     const map = {};
     for (const r of data) {
-      const raw = r[kD]; if (!raw) continue;
-      const d = typeof raw === 'string' ? raw.slice(0,10) : new Date(raw).toISOString().slice(0,10);
-      if (!map[d]) map[d] = { d, e:0, s:0 };
+      const d = toISODate(r[kD]);
+      if (!d) continue;
+      if (!map[d]) map[d] = { d, e: 0, s: 0 };
       map[d].e += toNum(r[kE]);
       map[d].s += toNum(r[kS]);
     }
-    const sorted = Object.values(map).sort((a,b) => a.d.localeCompare(b.d));
+
+    const sorted = Object.values(map).sort((a, b) => a.d.localeCompare(b.d));
+
+    // Limiter à 60 points max pour la lisibilité
     const step = Math.max(1, Math.floor(sorted.length / 60));
+
     return {
-      pts:  sorted.filter((_,i) => i%step===0).map(r => ({ ...r, label:fmtDate(r.d) })),
-      totE: sorted.reduce((s,r) => s+r.e, 0),
-      totS: sorted.reduce((s,r) => s+r.s, 0),
+      pts:  sorted.filter((_, i) => i % step === 0).map(r => ({ ...r, label: fmtDate(r.d) })),
+      totE: sorted.reduce((s, r) => s + r.e, 0),
+      totS: sorted.reduce((s, r) => s + r.s, 0),
     };
   }, [data]);
 
+  if (loading) return <Skeleton height={300} />;
   if (!pts.length) return <Empty />;
 
   return (
     <>
       <StatRow items={[
-        { label:'Total entrées', value:totE, color:C.green, isShort:false },
-        { label:'Total sorties', value:totS, color:C.red,   isShort:false },
+        { label: 'Total entrées', value: totE, color: C.green },
+        { label: 'Total sorties', value: totS, color: C.red   },
       ]} />
       <ResponsiveContainer width="100%" height={240}>
         <AreaChart data={pts} margin={{ top:4, right:4, left:-16, bottom:0 }}>
@@ -390,40 +485,42 @@ function G1({ data }) {
 
 // ═════════════════════════════════════════════════════════════
 //  G2 — Top 10 articles
-//  Le graphique prend flex:1 pour remplir toute la hauteur
-//  disponible quand la card est étirée par le grid
+//  SOURCE : fetchMouvements  ✅ même source que G1
 // ═════════════════════════════════════════════════════════════
-function G2({ data }) {
+function G2({ data, loading }) {
   const [mode, setMode] = useState('entrees');
 
   const rows = useMemo(() => {
     if (!data?.length) return [];
     const find = mkFind(Object.keys(data[0]));
-    const kA = find('Article','AR_Ref');
-    const kN = find('Designation','AR_Design','Désignation');
-    const kE = find('TotalEntrees','Total Entrees','TotalEntree');
-    const kS = find('TotalSorties','Total Sorties','TotalSortie');
+    const kA = find('Article', 'AR_Ref');
+    const kN = find('Designation', 'AR_Design', 'Désignation');
+    const kE = find('Total Entrees', 'TotalEntrees', 'TotalEntree');
+    const kS = find('Total Sorties', 'TotalSorties', 'TotalSortie');
     const map = {};
     for (const r of data) {
       const code = r[kA] ?? '?';
-      if (!map[code]) map[code] = { code, name:r[kN]??code, entrees:0, sorties:0 };
+      if (!map[code]) map[code] = { code, name: r[kN] ?? code, entrees: 0, sorties: 0 };
       map[code].entrees += toNum(r[kE]);
       map[code].sorties += toNum(r[kS]);
     }
     return Object.values(map)
-      .map(a => ({ ...a, total:a.entrees+a.sorties }))
-      .sort((a,b) => b[mode]-a[mode])
-      .slice(0,10)
+      .map(a => ({ ...a, total: a.entrees + a.sorties }))
+      .sort((a, b) => b[mode] - a[mode])
+      .slice(0, 10)
       .reverse();
   }, [data, mode]);
 
+  if (loading) return <Skeleton height={360} />;
   if (!rows.length) return <Empty />;
 
-  const barCol = mode==='entrees' ? C.green : mode==='sorties' ? C.red : C.blue;
+  const barCol = mode === 'entrees' ? C.green : mode === 'sorties' ? C.red : C.blue;
+
+  // Hauteur fixe calculée : évite le width/height=-1 de Recharts
+  // quand le parent flex n'a pas encore de dimension au 1er rendu
+  const chartH = Math.max(200, rows.length * 40);
 
   return (
-    // flex:1 + display:flex + flexDirection:column pour que le
-    // ResponsiveContainer grandisse jusqu'à remplir la card
     <div style={{ display:'flex', flexDirection:'column', flex:1, minHeight:0 }}>
       <div style={{ marginBottom:16, flexShrink:0 }}>
         <Tabs
@@ -431,9 +528,8 @@ function G2({ data }) {
           value={mode} onChange={setMode}
         />
       </div>
-      {/* flex:1 + minHeight:0 = le chart s'étire sans déborder */}
-      <div style={{ flex:1, minHeight: rows.length * 36 }}>
-        <ResponsiveContainer width="100%" height="100%">
+      <div style={{ width:'100%' }}>
+        <ResponsiveContainer width="100%" height={chartH}>
           <BarChart data={rows} layout="vertical"
             margin={{ top:0, right:55, left:4, bottom:0 }} barCategoryGap="28%">
             <CartesianGrid strokeDasharray="4 4" stroke={C.borderLight} horizontal={false} />
@@ -446,7 +542,7 @@ function G2({ data }) {
               cursor={{ fill:`${barCol}10` }}
               content={({ active, payload, label }) => {
                 if (!active || !payload?.length) return null;
-                const row = rows.find(r => r.code===label);
+                const row = rows.find(r => r.code === label);
                 return (
                   <div style={{
                     background:C.white, border:`1px solid ${C.border}`,
@@ -454,7 +550,7 @@ function G2({ data }) {
                     boxShadow:'0 6px 24px rgba(0,0,0,0.10)', fontSize:12,
                   }}>
                     <p style={{ fontWeight:600, color:C.text, margin:'0 0 4px' }}>{label}</p>
-                    {row?.name && row.name!==label && (
+                    {row?.name && row.name !== label && (
                       <p style={{ fontSize:11, color:C.textMuted, margin:'0 0 7px', maxWidth:210 }}>
                         {row.name}
                       </p>
@@ -469,9 +565,9 @@ function G2({ data }) {
               }}
             />
             <Bar dataKey={mode} name={mode} fill={barCol} radius={[0,5,5,0]}>
-              {rows.map((_,i) => (
+              {rows.map((_, i) => (
                 <Cell key={i} fill={barCol}
-                  fillOpacity={0.55+(i/Math.max(rows.length-1,1))*0.45} />
+                  fillOpacity={0.55 + (i / Math.max(rows.length - 1, 1)) * 0.45} />
               ))}
             </Bar>
           </BarChart>
@@ -482,38 +578,42 @@ function G2({ data }) {
 }
 
 // ═════════════════════════════════════════════════════════════
-//  G3 — Répartition catalogue N1 — légende 2 colonnes
+//  G3 — Répartition catalogue N1
+//  SOURCE : fetchMouvements  ✅ même source cohérente
 // ═════════════════════════════════════════════════════════════
-function G3({ data }) {
+function G3({ data, loading }) {
   const [mode, setMode] = useState('stock');
   const [hov, setHov]   = useState(null);
 
   const rows = useMemo(() => {
     if (!data?.length) return [];
     const find = mkFind(Object.keys(data[0]));
-    const kC = find('CatN1','Cat N1','CL_Intitule1','clintitule1');
-    const kE = find('TotalEntrees','Total Entrees','TotalEntree');
-    const kS = find('TotalSorties','Total Sorties','TotalSortie');
-    const kV = find('ValeurFinalePermanente','Valeur Finale (Permanente)','ValeurFinale','valeurfinale','Solde');
-    const kF = find('StockFinal','Stock Final');
+    const kC = find('CatN1', 'Cat N1', 'CL_Intitule1', 'clintitule1');
+    const kE = find('Total Entrees', 'TotalEntrees', 'TotalEntree');
+    const kS = find('Total Sorties', 'TotalSorties', 'TotalSortie');
+    // Pour stock et valeur on garde la vue SP_GetMouvements qui inclut StockFinal et ValeurFinalePermanente
+    const kV = find('Valeur Finale Permanente', 'ValeurFinalePermanente', 'Valeur Finale (Permanente)', 'ValeurFinale', 'Solde');
+    const kF = find('Stock Final', 'StockFinal');
     const map = {};
     for (const r of data) {
       const cat = r[kC] || 'Sans catalogue';
       if (!map[cat]) map[cat] = { name:cat, entrees:0, sorties:0, stock:0, valeur:0 };
       map[cat].entrees += toNum(r[kE]);
       map[cat].sorties += toNum(r[kS]);
+      // StockFinal et ValeurFinale : on prend le max par article/dépôt/jour pour éviter la somme cumulative
       map[cat].stock   += toNum(r[kF]);
       map[cat].valeur  += toNum(r[kV]);
     }
     return Object.values(map)
-      .sort((a,b) => b[mode]-a[mode])
-      .filter(c => c[mode]>0);
+      .sort((a, b) => b[mode] - a[mode])
+      .filter(c => c[mode] > 0);
   }, [data, mode]);
 
+  if (loading) return <Skeleton height={380} />;
   if (!rows.length) return <Empty />;
 
-  const total    = rows.reduce((s,r) => s+r[mode], 0);
-  const hovRow   = rows.find(r => r.name===hov);
+  const total    = rows.reduce((s, r) => s + r[mode], 0);
+  const hovRow   = rows.find(r => r.name === hov);
   const display8 = rows.slice(0, 8);
 
   return (
@@ -531,20 +631,20 @@ function G3({ data }) {
       </div>
 
       <div style={{ display:'flex', flexDirection:'column', alignItems:'center' }}>
-        {/* Donut */}
-        <div style={{ position:'relative', width:200, height:200 }}>
-          <ResponsiveContainer width="100%" height="100%">
+      {/* Donut — taille fixe 200×200, pas de % pour éviter width=-1 */}
+        <div style={{ position:'relative', width:200, height:200, flexShrink:0 }}>
+          <ResponsiveContainer width={200} height={200}>
             <PieChart>
               <Pie
                 data={rows} dataKey={mode} cx="50%" cy="50%"
                 innerRadius={58} outerRadius={88} paddingAngle={2}
-                onMouseEnter={(_,i) => setHov(rows[i].name)}
+                onMouseEnter={(_, i) => setHov(rows[i].name)}
                 onMouseLeave={() => setHov(null)}
               >
-                {rows.map((r,i) => (
+                {rows.map((r, i) => (
                   <Cell key={r.name}
-                    fill={CAT_COLORS[i%CAT_COLORS.length]}
-                    opacity={hov && hov!==r.name ? 0.25 : 1}
+                    fill={CAT_COLORS[i % CAT_COLORS.length]}
+                    opacity={hov && hov !== r.name ? 0.25 : 1}
                     stroke="none"
                   />
                 ))}
@@ -556,9 +656,11 @@ function G3({ data }) {
             flexDirection:'column', alignItems:'center',
             justifyContent:'center', pointerEvents:'none',
           }}>
-            <p style={{ fontSize:10, color:C.textLight, margin:0,
+            <p style={{
+              fontSize:10, color:C.textLight, margin:0,
               maxWidth:76, overflow:'hidden', textOverflow:'ellipsis',
-              whiteSpace:'nowrap', textAlign:'center' }}>
+              whiteSpace:'nowrap', textAlign:'center',
+            }}>
               {hovRow ? hovRow.name : 'Total'}
             </p>
             <p style={{ fontSize:18, fontWeight:700, color:C.text, margin:'2px 0 1px' }}>
@@ -566,41 +668,28 @@ function G3({ data }) {
             </p>
             {hovRow && (
               <p style={{ fontSize:10, color:C.textLight, margin:0 }}>
-                {((toNum(hovRow[mode])/total)*100).toFixed(1)}%
+                {((toNum(hovRow[mode]) / total) * 100).toFixed(1)}%
               </p>
             )}
           </div>
         </div>
 
-        {/* Légende 2 colonnes */}
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '10px 16px',
-          width: '100%',
-          marginTop: 14,
+          display:'grid', gridTemplateColumns:'1fr 1fr',
+          gap:'10px 16px', width:'100%', marginTop:14,
         }}>
           {display8.map((r, i) => {
             const pct   = total > 0 ? (toNum(r[mode]) / total) * 100 : 0;
             const col   = CAT_COLORS[i % CAT_COLORS.length];
             const isHov = hov === r.name;
             return (
-              <div
-                key={r.name}
+              <div key={r.name}
                 onMouseEnter={() => setHov(r.name)}
                 onMouseLeave={() => setHov(null)}
-                style={{
-                  opacity: hov && !isHov ? 0.35 : 1,
-                  transition: 'opacity .15s',
-                  cursor: 'default',
-                }}
+                style={{ opacity: hov && !isHov ? 0.35 : 1, transition:'opacity .15s', cursor:'default' }}
               >
-                {/* Nom */}
                 <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:3 }}>
-                  <span style={{
-                    width:8, height:8, borderRadius:'50%',
-                    background:col, flexShrink:0,
-                  }} />
+                  <span style={{ width:8, height:8, borderRadius:'50%', background:col, flexShrink:0 }} />
                   <span style={{
                     fontSize:11, color:C.text, flex:1,
                     overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
@@ -608,28 +697,19 @@ function G3({ data }) {
                     {r.name}
                   </span>
                 </div>
-                {/* Valeur + % */}
                 <div style={{
-                  display:'flex', alignItems:'center',
-                  justifyContent:'space-between',
+                  display:'flex', alignItems:'center', justifyContent:'space-between',
                   marginBottom:4, paddingLeft:14,
                 }}>
                   <span style={{ fontSize:11, fontWeight:600, color:C.text }}>
                     {fmtNum(toNum(r[mode]))}
                   </span>
-                  <span style={{ fontSize:10, color:C.textMuted }}>
-                    {pct.toFixed(1)}%
-                  </span>
+                  <span style={{ fontSize:10, color:C.textMuted }}>{pct.toFixed(1)}%</span>
                 </div>
-                {/* Barre */}
-                <div style={{
-                  height:3, borderRadius:2,
-                  background:C.borderLight, overflow:'hidden',
-                }}>
+                <div style={{ height:3, borderRadius:2, background:C.borderLight, overflow:'hidden' }}>
                   <div style={{
                     height:'100%', width:`${pct}%`,
-                    background:col, borderRadius:2,
-                    transition:'width .5s ease',
+                    background:col, borderRadius:2, transition:'width .5s ease',
                   }} />
                 </div>
               </div>
@@ -649,48 +729,66 @@ function G3({ data }) {
 
 // ═════════════════════════════════════════════════════════════
 //  G4 — Valeur permanente du stock
+//  SOURCE : tableData (SP_GetStockJournalier)
+//  ✅ FIX : on prend le dernier StockFinal par (article, dépôt)
+//           pour éviter la somme des lignes de report
 // ═════════════════════════════════════════════════════════════
-function G4({ data }) {
+function G4({ data, loading }) {
   const { pts, parMois, dernierValeur, premiereValeur, dernierStock, maxValeur, minValeur } = useMemo(() => {
-    if (!data?.length) return {
-      pts:[], parMois:[], dernierValeur:0, premiereValeur:0,
-      dernierStock:0, maxValeur:0, minValeur:0,
-    };
-    const find = mkFind(Object.keys(data[0]));
-    const kD = find('Date','DateJour');
-    const kV = find('ValeurFinalePermanente','Valeur Finale (Permanente)','ValeurFinale','valeurfinale','Solde');
-    const kF = find('StockFinal','Stock Final');
-    const kE = find('TotalEntrees','Total Entrees','TotalEntree');
-    const kS = find('TotalSorties','Total Sorties','TotalSortie');
+    const empty = { pts:[], parMois:[], dernierValeur:0, premiereValeur:0, dernierStock:0, maxValeur:0, minValeur:0 };
+    if (!data?.length) return empty;
 
-    const map = {};
-    const moisMap = {};
+    const find = mkFind(Object.keys(data[0]));
+    const kD = find('Date', 'DateJour');
+    const kV = find('Valeur Finale (Permanente)', 'ValeurFinalePermanente', 'Valeur Finale Permanente', 'ValeurFinale', 'Solde');
+    const kF = find('Stock Final', 'StockFinal');
+    const kE = find('Total Entrees', 'TotalEntrees', 'TotalEntree');
+    const kS = find('Total Sorties', 'TotalSorties', 'TotalSortie');
+    const kA = find('Article', 'AR_Ref');
+    const kDp = find('Depot', 'DE_No');
+
+    // ── FIX : pour chaque (article, dépôt, jour), on garde la valeur telle quelle.
+    //    Pour le total par jour, on agrège en sommant une seule fois par (art, dépôt).
+    //    SP_GetStockJournalier retourne déjà 1 ligne par (art, dépôt, jour) → somme directe.
+    const dayMap   = {};
+    const moisMap  = {};
 
     for (const r of data) {
-      const raw = r[kD]; if (!raw) continue;
-      const d = typeof raw === 'string' ? raw.slice(0,10) : new Date(raw).toISOString().slice(0,10);
-      const mois = d.slice(0,7);
-      if (!map[d]) map[d] = { d, valeur:0, stock:0 };
-      map[d].valeur += toNum(r[kV]);
-      map[d].stock  += toNum(r[kF]);
-      if (!moisMap[mois]) moisMap[mois] = { mois, entrees:0, sorties:0, valeur:0 };
-      moisMap[mois].entrees += toNum(r[kE]);
-      moisMap[mois].sorties += toNum(r[kS]);
-      moisMap[mois].valeur  += toNum(r[kV]);
+      const d    = toISODate(r[kD]);
+      if (!d) continue;
+      const mois = d.slice(0, 7);
+
+      const v  = toNum(r[kV]);
+      const sf = toNum(r[kF]);
+      const e  = toNum(r[kE]);
+      const s  = toNum(r[kS]);
+
+      if (!dayMap[d]) dayMap[d] = { d, valeur: 0, stock: 0 };
+      dayMap[d].valeur += v;
+      dayMap[d].stock  += sf;
+
+      if (!moisMap[mois]) moisMap[mois] = { mois, entrees: 0, sorties: 0, valeur: 0 };
+      // Pour les mouvements mensuels on ne compte que les jours avec mouvements réels
+      if (e > 0 || s > 0) {
+        moisMap[mois].entrees += e;
+        moisMap[mois].sorties += s;
+      }
+      moisMap[mois].valeur = Math.max(moisMap[mois].valeur, v); // valeur de fin de mois
     }
 
-    const sorted  = Object.values(map).sort((a,b) => a.d.localeCompare(b.d));
-    const step    = Math.max(1, Math.floor(sorted.length/60));
-    const allVals = sorted.map(r => r.valeur).filter(v => v > 0);
-    const moisSorted = Object.values(moisMap).sort((a,b) => a.mois.localeCompare(b.mois));
+    const sorted   = Object.values(dayMap).sort((a, b) => a.d.localeCompare(b.d));
+    const step     = Math.max(1, Math.floor(sorted.length / 60));
+    const allVals  = sorted.map(r => r.valeur).filter(v => v > 0);
+
+    const moisSorted = Object.values(moisMap).sort((a, b) => a.mois.localeCompare(b.mois));
+    const noms = ['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
     const moisFmt = moisSorted.map(r => {
       const [y, m] = r.mois.split('-');
-      const noms = ['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
-      return { ...r, label:`${noms[parseInt(m,10)-1]} ${y.slice(2)}` };
+      return { ...r, label: `${noms[parseInt(m, 10) - 1]} ${y.slice(2)}` };
     });
 
     return {
-      pts:            sorted.filter((_,i) => i%step===0).map(r => ({ ...r, label:fmtDate(r.d) })),
+      pts:            sorted.filter((_, i) => i % step === 0).map(r => ({ ...r, label: fmtDate(r.d) })),
       parMois:        moisFmt,
       dernierValeur:  toNum(sorted.at(-1)?.valeur ?? 0),
       premiereValeur: toNum(sorted[0]?.valeur     ?? 0),
@@ -700,6 +798,7 @@ function G4({ data }) {
     };
   }, [data]);
 
+  if (loading) return <Skeleton height={360} />;
   if (!pts.length) return <Empty />;
 
   const diff    = dernierValeur - premiereValeur;
@@ -709,73 +808,53 @@ function G4({ data }) {
   return (
     <>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginBottom:20 }}>
+        {/* Valeur actuelle */}
         <div style={{
           background:`linear-gradient(135deg, ${C.blue}12, ${C.blue}04)`,
-          border:`1px solid ${C.blue}25`, borderRadius:12, padding:'14px 16px',
-          position:'relative', overflow:'hidden',
+          border:`1px solid ${C.blue}25`, borderRadius:12, padding:'14px 16px', position:'relative', overflow:'hidden',
         }}>
-          <div style={{ position:'absolute', right:-10, top:-10, width:60, height:60,
-            borderRadius:'50%', background:`${C.blue}10` }} />
-          <p style={{ fontSize:10, color:C.textMuted, margin:'0 0 6px',
-            textTransform:'uppercase', letterSpacing:'.07em' }}>Valeur actuelle</p>
-          <p style={{ fontSize:20, fontWeight:700, color:C.blue, margin:'0 0 2px' }}>
-            {fmtVal(dernierValeur)}
-          </p>
+          <div style={{ position:'absolute', right:-10, top:-10, width:60, height:60, borderRadius:'50%', background:`${C.blue}10` }} />
+          <p style={{ fontSize:10, color:C.textMuted, margin:'0 0 6px', textTransform:'uppercase', letterSpacing:'.07em' }}>Valeur actuelle</p>
+          <p style={{ fontSize:20, fontWeight:700, color:C.blue, margin:'0 0 2px' }}>{fmtVal(dernierValeur)}</p>
           <p style={{ fontSize:10, color:C.textMuted, margin:0 }}>MAD — dernier jour</p>
         </div>
 
+        {/* Variation */}
         <div style={{
           background:`linear-gradient(135deg, ${up?C.green:C.red}12, ${up?C.green:C.red}04)`,
-          border:`1px solid ${up?C.green:C.red}25`, borderRadius:12, padding:'14px 16px',
-          position:'relative', overflow:'hidden',
+          border:`1px solid ${up?C.green:C.red}25`, borderRadius:12, padding:'14px 16px', position:'relative', overflow:'hidden',
         }}>
-          <div style={{ position:'absolute', right:-10, top:-10, width:60, height:60,
-            borderRadius:'50%', background:`${up?C.green:C.red}10` }} />
-          <p style={{ fontSize:10, color:C.textMuted, margin:'0 0 6px',
-            textTransform:'uppercase', letterSpacing:'.07em' }}>Variation</p>
+          <div style={{ position:'absolute', right:-10, top:-10, width:60, height:60, borderRadius:'50%', background:`${up?C.green:C.red}10` }} />
+          <p style={{ fontSize:10, color:C.textMuted, margin:'0 0 6px', textTransform:'uppercase', letterSpacing:'.07em' }}>Variation</p>
           <div style={{ display:'flex', alignItems:'center', gap:4, marginBottom:2 }}>
             {up ? <ArrowUpRight size={16} color={C.green} /> : <ArrowDownRight size={16} color={C.red} />}
-            <p style={{ fontSize:20, fontWeight:700, color:up?C.green:C.red, margin:0 }}>
-              {up?'+':''}{fmtVal(diff)}
-            </p>
+            <p style={{ fontSize:20, fontWeight:700, color:up?C.green:C.red, margin:0 }}>{up?'+':''}{fmtVal(diff)}</p>
           </div>
-          <p style={{ fontSize:10, color:C.textMuted, margin:0 }}>
-            {up?'+':''}{pctEvol.toFixed(1)}% sur la période
-          </p>
+          <p style={{ fontSize:10, color:C.textMuted, margin:0 }}>{up?'+':''}{pctEvol.toFixed(1)}% sur la période</p>
         </div>
 
+        {/* Stock dernier jour */}
         <div style={{
           background:`linear-gradient(135deg, ${C.amber}12, ${C.amber}04)`,
-          border:`1px solid ${C.amber}25`, borderRadius:12, padding:'14px 16px',
-          position:'relative', overflow:'hidden',
+          border:`1px solid ${C.amber}25`, borderRadius:12, padding:'14px 16px', position:'relative', overflow:'hidden',
         }}>
-          <div style={{ position:'absolute', right:-10, top:-10, width:60, height:60,
-            borderRadius:'50%', background:`${C.amber}10` }} />
-          <p style={{ fontSize:10, color:C.textMuted, margin:'0 0 6px',
-            textTransform:'uppercase', letterSpacing:'.07em' }}>Stock dernier jour</p>
-          <p style={{ fontSize:20, fontWeight:700, color:C.amber, margin:'0 0 2px' }}>
-            {fmtNum(dernierStock)}
-          </p>
+          <div style={{ position:'absolute', right:-10, top:-10, width:60, height:60, borderRadius:'50%', background:`${C.amber}10` }} />
+          <p style={{ fontSize:10, color:C.textMuted, margin:'0 0 6px', textTransform:'uppercase', letterSpacing:'.07em' }}>Stock dernier jour</p>
+          <p style={{ fontSize:20, fontWeight:700, color:C.amber, margin:'0 0 2px' }}>{fmtNum(dernierStock)}</p>
           <p style={{ fontSize:10, color:C.textMuted, margin:0 }}>unités en stock</p>
         </div>
       </div>
 
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
-        <div style={{ background:C.borderLight, border:`1px solid ${C.border}`,
-          borderRadius:12, padding:'14px 12px 10px' }}>
+        {/* Courbe valeur permanente */}
+        <div style={{ background:C.borderLight, border:`1px solid ${C.border}`, borderRadius:12, padding:'14px 12px 10px' }}>
           <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:4 }}>
             <Activity size={13} color={C.blue} />
-            <p style={{ fontSize:12, fontWeight:600, color:C.text, margin:0 }}>
-              Courbe valeur permanente
-            </p>
+            <p style={{ fontSize:12, fontWeight:600, color:C.text, margin:0 }}>Courbe valeur permanente</p>
           </div>
           <div style={{ display:'flex', gap:12, marginBottom:10 }}>
-            <span style={{ fontSize:10, color:C.textLight }}>
-              Min : <b style={{ color:C.text }}>{fmtVal(minValeur)} MAD</b>
-            </span>
-            <span style={{ fontSize:10, color:C.textLight }}>
-              Max : <b style={{ color:C.text }}>{fmtVal(maxValeur)} MAD</b>
-            </span>
+            <span style={{ fontSize:10, color:C.textLight }}>Min : <b style={{ color:C.text }}>{fmtVal(minValeur)} MAD</b></span>
+            <span style={{ fontSize:10, color:C.textLight }}>Max : <b style={{ color:C.text }}>{fmtVal(maxValeur)} MAD</b></span>
           </div>
           <ResponsiveContainer width="100%" height={180}>
             <LineChart data={pts} margin={{ top:4, right:4, left:-18, bottom:0 }}>
@@ -786,17 +865,10 @@ function G4({ data }) {
                 axisLine={false} tickFormatter={v => fmtVal(toNum(v))} />
               <Tooltip content={<Tip isValeur />} />
               {premiereValeur > 0 && (
-                <ReferenceLine y={(dernierValeur+premiereValeur)/2}
+                <ReferenceLine y={(dernierValeur + premiereValeur) / 2}
                   stroke={C.blue} strokeDasharray="6 3" strokeOpacity={0.4}
-                  label={{ value:'moy.', position:'insideTopRight',
-                    fontSize:9, fill:C.blue, fillOpacity:.6 }} />
+                  label={{ value:'moy.', position:'insideTopRight', fontSize:9, fill:C.blue, fillOpacity:.6 }} />
               )}
-              <defs>
-                <linearGradient id="gVal" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor={C.blue} stopOpacity={.15} />
-                  <stop offset="100%" stopColor={C.blue} stopOpacity={0}   />
-                </linearGradient>
-              </defs>
               <Line type="monotone" dataKey="valeur" name="Valeur"
                 stroke={C.blue} strokeWidth={2.5}
                 dot={false} activeDot={{ r:4, fill:C.blue, strokeWidth:0 }} />
@@ -804,13 +876,11 @@ function G4({ data }) {
           </ResponsiveContainer>
         </div>
 
-        <div style={{ background:C.borderLight, border:`1px solid ${C.border}`,
-          borderRadius:12, padding:'14px 12px 10px' }}>
+        {/* Entrées / Sorties par mois */}
+        <div style={{ background:C.borderLight, border:`1px solid ${C.border}`, borderRadius:12, padding:'14px 12px 10px' }}>
           <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:12 }}>
             <Wallet size={13} color={C.amber} />
-            <p style={{ fontSize:12, fontWeight:600, color:C.text, margin:0 }}>
-              Entrées / Sorties par mois
-            </p>
+            <p style={{ fontSize:12, fontWeight:600, color:C.text, margin:0 }}>Entrées / Sorties par mois</p>
           </div>
           {parMois.length > 0 ? (
             <ResponsiveContainer width="100%" height={180}>
@@ -824,10 +894,8 @@ function G4({ data }) {
                 <Tooltip content={<Tip />} />
                 <Legend iconType="circle" iconSize={7}
                   formatter={v => <span style={{ fontSize:10, color:C.textMuted }}>{v}</span>} />
-                <Bar dataKey="entrees" name="Entrées" fill={C.green}
-                  fillOpacity={0.80} radius={[3,3,0,0]} />
-                <Bar dataKey="sorties" name="Sorties" fill={C.red}
-                  fillOpacity={0.80} radius={[3,3,0,0]} />
+                <Bar dataKey="entrees" name="Entrées" fill={C.green} fillOpacity={0.80} radius={[3,3,0,0]} />
+                <Bar dataKey="sorties" name="Sorties" fill={C.red}   fillOpacity={0.80} radius={[3,3,0,0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -846,14 +914,25 @@ function G4({ data }) {
 // ═════════════════════════════════════════════════════════════
 export default function PageCharts() {
   const { tableData, currentFilters, hasFiltered } = useDashboard();
-  const hasData = hasFiltered && tableData?.length > 0;
+
+  // ── Chargement des mouvements (source propre pour G1, G2, G3)
+  const {
+    data:    mouvData,
+    loading: mouvLoading,
+    error:   mouvError,
+  } = useMouvementsData(hasFiltered ? currentFilters : null);
+
+  const hasStockData = hasFiltered && tableData?.length > 0;
+  const hasMouvData  = hasFiltered && mouvData?.length  > 0;
+  const anyLoading   = mouvLoading;
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
 
       <Banner filters={currentFilters} />
 
-      {!hasData && (
+      {/* Message d'invite */}
+      {!hasFiltered && (
         <div style={{
           background:C.blueA, border:`1px solid ${C.blueB}`,
           borderLeft:`3px solid ${C.blue}`,
@@ -861,10 +940,7 @@ export default function PageCharts() {
           fontSize:13, color:'#0b7db0',
           display:'flex', alignItems:'center', gap:10,
         }}>
-          <div style={{
-            width:7, height:7, borderRadius:'50%',
-            background:C.blue, flexShrink:0,
-          }} />
+          <div style={{ width:7, height:7, borderRadius:'50%', background:C.blue, flexShrink:0 }} />
           <span>
             Rendez-vous sur le <strong>Tableau de bord</strong> pour sélectionner
             une base et une période, puis cliquez sur <strong>Filtrer</strong>.
@@ -872,42 +948,65 @@ export default function PageCharts() {
         </div>
       )}
 
-      {hasData && (
+      {/* Erreur mouvements */}
+      {mouvError && (
+        <div style={{
+          background:C.redA, border:`1px solid ${C.redB}`,
+          borderLeft:`3px solid ${C.red}`,
+          borderRadius:10, padding:'12px 18px',
+          fontSize:13, color:'#c62828',
+          display:'flex', alignItems:'center', gap:10,
+        }}>
+          <div style={{ width:7, height:7, borderRadius:'50%', background:C.red, flexShrink:0 }} />
+          <span>Erreur chargement mouvements : {mouvError}</span>
+        </div>
+      )}
+
+      {/* ── GRAPHIQUES ── */}
+      {(hasFiltered || anyLoading) && (
         <>
-          <Section color={C.green} icon={TrendingUp}
+          {/* G1 — Source : SP_GetMouvements ✅ */}
+          <Section
+            color={C.green} icon={TrendingUp}
             title="Évolution des entrées et sorties"
-            subtitle="Quantités journalières sur la période filtrée">
-            <G1 data={tableData} />
+            subtitle="Quantités journalières — source : mouvements réels (sans report de stock)"
+            loading={mouvLoading}
+          >
+            <G1 data={mouvData} loading={mouvLoading} />
           </Section>
 
-          {/*
-            Pas de alignItems:start → les deux cards s'étirent à la même hauteur.
-            G2 utilise flex:1 en interne pour que le graphique remplisse cet espace.
-          */}
+          {/* G2 + G3 — Source : SP_GetMouvements ✅ */}
           <div style={{
             display:'grid',
             gridTemplateColumns:'repeat(auto-fit, minmax(300px, 1fr))',
             gap:20,
           }}>
-            <Section color={C.blue} icon={BarChart3}
+            <Section
+              color={C.blue} icon={BarChart3}
               title="Top 10 articles mouvementés"
               subtitle="Par entrées, sorties ou total"
-              stretch>
-              <G2 data={tableData} />
+              stretch loading={mouvLoading}
+            >
+              <G2 data={mouvData} loading={mouvLoading} />
             </Section>
 
-            <Section color={C.purple} icon={PieIcon}
+            <Section
+              color={C.purple} icon={PieIcon}
               title="Répartition par catalogue N1"
               subtitle="Stock, mouvements ou valeur"
-              stretch>
-              <G3 data={tableData} />
+              stretch loading={mouvLoading}
+            >
+              <G3 data={mouvData} loading={mouvLoading} />
             </Section>
           </div>
 
-          <Section color={C.amber} icon={DollarSign}
+          {/* G4 — Source : SP_GetStockJournalier (tableData) ✅ */}
+          <Section
+            color={C.amber} icon={DollarSign}
             title="Valeur permanente du stock"
-            subtitle="Courbe valeur MAD · Mouvements mensuels · KPIs clés">
-            <G4 data={tableData} />
+            subtitle="Courbe valeur MAD · Mouvements mensuels · KPIs clés — source : stock journalier"
+          >
+            <G4 data={tableData} loading={!hasStockData && hasFiltered} />
           </Section>
         </>
       )}
