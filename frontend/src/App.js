@@ -341,6 +341,9 @@ function Dashboard({ sidebarOpen }) {
         initialBase={currentFilters.base}
         initialDateDebut={currentFilters.dateDebut}
         initialDateFin={currentFilters.dateFin}
+        initialDepot={currentFilters.depot || ''}
+        initialFamille={currentFilters.fa_codefamille || ''}
+        initialCat1={currentFilters.cl_no1 || ''}
       />
  
       {error && (

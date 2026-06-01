@@ -179,7 +179,7 @@ function DateInputInline({ label, value, onChange, min, max }) {
 }
 
 // ── Composant principal Filters
-export default function Filters({ onFilter, initialBase = '', initialDateDebut = '', initialDateFin = '' }) {
+export default function Filters({ onFilter, initialBase = '', initialDateDebut = '', initialDateFin = '',initialDepot = '',  initialFamille = '',initialCat1 = ''}) {
   const { isMobile, isTablet } = useBreakpoint();
 
   const [bases, setBases] = useState([]);
@@ -193,9 +193,9 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
 
   const [base, setBase] = useState(initialBase);
   const [article, setArticle] = useState('');
-  const [depot, setDepot] = useState('');
-  const [famille, setFamille] = useState('');
-  const [cat1, setCat1] = useState('');
+  const [depot, setDepot] = useState(initialDepot);
+  const [famille, setFamille] = useState(initialFamille);
+  const [cat1, setCat1] = useState(initialCat1);
   const [cat2, setCat2] = useState('');
   const [cat3, setCat3] = useState('');
   const [cat4, setCat4] = useState('');
