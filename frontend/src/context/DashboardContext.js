@@ -1,48 +1,62 @@
-// frontend/src/context/DashboardContext.js
-import React, { createContext, useContext, useState, useMemo } from 'react';
-
-const DashboardContext = createContext(null);
+import React, { createContext, useContext, useState, useCallback } from 'react';
 
 function getDefaultDates() {
   const today = new Date();
   const yyyy = today.getFullYear();
   const mm = String(today.getMonth() + 1).padStart(2, '0');
   const dd = String(today.getDate()).padStart(2, '0');
-  return { dateDebut: `${yyyy}-${mm}-01`, dateFin: `${yyyy}-${mm}-${dd}` };
+  return {
+    dateDebut: `${yyyy}-${mm}-01`,
+    dateFin:   `${yyyy}-${mm}-${dd}`,
+  };
 }
 
-const BASE_PAR_DEFAUT = 'BIJOU';
+const { dateDebut: defaultDebut, dateFin: defaultFin } = getDefaultDates();
+
+const DashboardContext = createContext(null);
 
 export function DashboardProvider({ children }) {
-  const { dateDebut: defaultDebut, dateFin: defaultFin } = getDefaultDates();
+  const [tableData,    setTableData]   = useState(null);
+  const [hasFiltered,  setHasFiltered] = useState(false);
+  const [loading,      setLoading]     = useState(false);
+  const [error,        setError]       = useState(null);
 
-  const [tableData, setTableData] = useState(null);
-  const [hasFiltered, setHasFiltered] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  // Filtres partagés base + dates — lus ET écrits depuis Dashboard ET Mouvements
   const [currentFilters, setCurrentFilters] = useState({
-    base: BASE_PAR_DEFAUT,
-    dateDebut: defaultDebut,
-    dateFin: defaultFin,
-    depot: null,
-    article: null,
-    cl_no1: null,
-    cl_no2: null,
-    cl_no3: null,
-    cl_no4: null,
+    base:           'BIJOU',
+    dateDebut:      defaultDebut,
+    dateFin:        defaultFin,
+    depot:          null,
+    article:        null,
+    fa_codefamille: null,
+    cl_no1:         null,
+    cl_no2:         null,
+    cl_no3:         null,
+    cl_no4:         null,
   });
 
-  const value = useMemo(() => ({
-    tableData, setTableData,
-    hasFiltered, setHasFiltered,
-    loading, setLoading,
-    error, setError,
-    currentFilters, setCurrentFilters,
-    defaultDebut, defaultFin,
-  }), [tableData, hasFiltered, loading, error, currentFilters, defaultDebut, defaultFin]);
+  // Callback partagé pour recharger le dashboard — sera injecté par Dashboard
+  const [reloadDashboardFn, setReloadDashboardFn] = useState(null);
+
+  const registerReloadDashboard = useCallback((fn) => {
+    setReloadDashboardFn(() => fn);
+  }, []);
+
+  const triggerDashboardReload = useCallback((params) => {
+    if (reloadDashboardFn) reloadDashboardFn(params);
+  }, [reloadDashboardFn]);
 
   return (
-    <DashboardContext.Provider value={value}>
+    <DashboardContext.Provider value={{
+      tableData, setTableData,
+      hasFiltered, setHasFiltered,
+      loading, setLoading,
+      error, setError,
+      currentFilters, setCurrentFilters,
+      registerReloadDashboard,
+      triggerDashboardReload,
+      defaultDebut, defaultFin,
+    }}>
       {children}
     </DashboardContext.Provider>
   );

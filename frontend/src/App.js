@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback  } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import SidebarP from './components/SidebarP';
@@ -209,9 +209,10 @@ function Dashboard({ sidebarOpen }) {
     error, setError,
     currentFilters, setCurrentFilters,
     defaultDebut, defaultFin,
+    registerReloadDashboard, 
   } = useDashboard();
  
-  const loadData = async (params) => {
+  const loadData = useCallback(async (params) => {
     setLoading(true);
     setError(null);
     try {
@@ -224,7 +225,11 @@ function Dashboard({ sidebarOpen }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setLoading, setError, setTableData]);
+
+  useEffect(() => {
+    registerReloadDashboard(loadData);
+  }, [registerReloadDashboard, loadData]);
  
   const handleFilter = async (params) => {
     if (!params) {
@@ -234,6 +239,7 @@ function Dashboard({ sidebarOpen }) {
         dateFin: defaultFin,
         depot: null, article: null,
         cl_no1: null, cl_no2: null, cl_no3: null, cl_no4: null,
+        fa_codefamille: null,
       };
       setCurrentFilters(d);
       setHasFiltered(false);
@@ -411,7 +417,6 @@ function Dashboard({ sidebarOpen }) {
     </>
   );
 }
-
 // ── Shell pour les pages inner (InnerSidebar + contenu)
 function DashboardShell({ sidebarOpen, children }) {
   return (
