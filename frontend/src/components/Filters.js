@@ -14,6 +14,7 @@ import {
   Eye,
 } from 'lucide-react';
 import { fetchBases, fetchFiltres } from '../api/stockApi';
+import { useDashboard } from '../context/DashboardContext';
 
 // ── Hook responsive
 function useBreakpoint() {
@@ -206,6 +207,9 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
   const [loadingFiltres, setLoadingFiltres] = useState(false);
   const [isFiltering, setIsFiltering] = useState(false);
 
+  const { setCurrentFilters } = useDashboard();
+
+
   const loadFiltres = useCallback(async (selectedBase, selectedCat1 = null, selectedFamille = null) => {
     if (!selectedBase) return;
     setLoadingFiltres(true);
@@ -243,6 +247,8 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
     setArticles([]); setDepots([]); setFamilles([]);
     setCat1List([]); setCat2List([]); setCat3List([]); setCat4List([]);
     if (val) loadFiltres(val);
+
+    setCurrentFilters(prev => ({ ...prev, base: val || null }));
   };
 
   const handleFamilleChange = (val) => {

@@ -408,6 +408,8 @@ export default function PageMovements() {
     setArticleOptions([]); setDepotOptions([]);
     setMouvData(null);
     if (val) loadFiltres(val);
+
+    setCurrentFilters(prev => ({ ...prev, base: val || null }));
   };
 
   // ── Reset

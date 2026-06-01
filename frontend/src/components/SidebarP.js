@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   Menu, X, Bell, UserCircle2,
   LayoutDashboard, PackageSearch, ArrowDownUp,
   BarChart3, Settings, Boxes, Warehouse,
-  BellRing, BrainCircuit, FileText, TrendingUp, Star,Database
+  BellRing, BrainCircuit, FileText, TrendingUp, Star,
+  Database, LogOut,
 } from 'lucide-react';
 import { useDashboard } from '../context/DashboardContext';
 
@@ -32,10 +33,22 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
   const location = useLocation();
   const { currentFilters } = useDashboard();
 
-  const isDashboard = location.pathname === '/' || location.pathname.startsWith('/dashboard');
-  const activeBase = currentFilters?.base;
+  const notifRef = useRef(null);
+  const userRef  = useRef(null);
 
-  // Match longest path first for nested routes
+  // Fermer les dropdowns au clic en dehors
+  useEffect(() => {
+    const handler = (e) => {
+      if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false);
+      if (userRef.current  && !userRef.current.contains(e.target))  setUserOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const isDashboard = location.pathname === '/' || location.pathname.startsWith('/dashboard');
+  const activeBase  = currentFilters?.base;
+
   const meta = Object.entries(PAGE_META)
     .filter(([path]) => location.pathname === path || location.pathname.startsWith(path + '/'))
     .sort((a, b) => b[0].length - a[0].length)[0]?.[1] ?? PAGE_META['/'];
@@ -63,6 +76,13 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
     boxShadow: '0 8px 24px rgba(0,0,0,0.10)', zIndex: 50, overflow: 'hidden',
   };
 
+  const menuItemStyle = {
+    width: '100%', textAlign: 'left', padding: '0.625rem 1rem',
+    color: '#555555', fontSize: '0.75rem', background: 'none', border: 'none',
+    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem',
+    transition: 'all 0.1s',
+  };
+
   return (
     <>
       <header style={{
@@ -86,7 +106,7 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <PageIcon size={16} style={{ color: '#12a6e0' }} />
-            <span style={{ color: '#0d0c0c', fontWeight: 600, fontSize: '0.995rem', letterSpacing: '0.01em' }}>
+            <span style={{ color: '#0d0c0c', fontWeight: 600, fontSize: '0.875rem', letterSpacing: '0.01em' }}>
               {pageTitle}
             </span>
             <span
@@ -101,8 +121,8 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
         {/* ── Droite ── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', position: 'relative' }}>
 
-          {/* !isDashboard && */}
-          { activeBase && (
+          {/* Badge base active */}
+          {activeBase && (
             <div className="flex items-center gap-1.5 bg-[rgba(1,214,58,0.08)] border border-[rgba(1,214,58,0.25)] rounded-full py-1 px-2.5">
               <Database size={11} className="text-[#01a82e]" />
               <span className="text-[#01a82e] text-[11px] font-bold uppercase tracking-wide">
@@ -110,10 +130,11 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
               </span>
             </div>
           )}
-          {/* Notifications */}
-          <div style={{ position: 'relative' }}>
+
+          {/* ── Notifications ── */}
+          <div style={{ position: 'relative' }} ref={notifRef}>
             <button
-              onClick={() => { setNotifOpen(!notifOpen); setUserOpen(false); }}
+              onClick={() => { setNotifOpen(o => !o); setUserOpen(false); }}
               style={{ ...btnStyle, position: 'relative' }}
               onMouseEnter={e => { e.currentTarget.style.background = '#f5f5f5'; e.currentTarget.style.color = '#0d0c0c'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#888888'; }}
@@ -158,10 +179,10 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
             )}
           </div>
 
-          {/* User */}
-          <div style={{ position: 'relative' }}>
+          {/* ── User ── */}
+          <div style={{ position: 'relative' }} ref={userRef}>
             <button
-              onClick={() => { setUserOpen(!userOpen); setNotifOpen(false); }}
+              onClick={() => { setUserOpen(o => !o); setNotifOpen(false); }}
               style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.375rem 0.5rem', borderRadius: '0.5rem', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'background 0.15s' }}
               onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
@@ -174,27 +195,47 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
 
             {userOpen && (
               <div style={{ ...dropdownStyle, width: '208px' }}>
+
+                {/* Header */}
                 <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #f0f0f0' }}>
                   <p style={{ color: '#0d0c0c', fontSize: '0.75rem', fontWeight: 500, margin: 0 }}>Administrateur</p>
                   <p style={{ color: '#c5c5c5', fontSize: '0.625rem', margin: '2px 0 0' }}>admin@sage.local</p>
                 </div>
+
+                {/* Gestion de bases */}
                 <button
-                  style={{ width: '100%', textAlign: 'left', padding: '0.625rem 1rem', color: '#555555', fontSize: '0.75rem', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.1s' }}
+                  style={menuItemStyle}
                   onMouseEnter={e => { e.currentTarget.style.background = '#f5f5f5'; e.currentTarget.style.color = '#0d0c0c'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#555555'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'none';    e.currentTarget.style.color = '#555555'; }}
                 >
-                  <UserCircle2 size={13} /> Mon profil
+                  <Database size={13} />
+                  Gestion des bases
                 </button>
+
+                {/* Mon profil */}
                 <button
-                  style={{ width: '100%', textAlign: 'left', padding: '0.625rem 1rem', color: '#e53935', fontSize: '0.75rem', background: 'none', border: 'none', borderTop: '1px solid #f0f0f0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'background 0.1s' }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(229,57,53,0.05)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                  style={menuItemStyle}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#f5f5f5'; e.currentTarget.style.color = '#0d0c0c'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'none';    e.currentTarget.style.color = '#555555'; }}
                 >
+                  <UserCircle2 size={13} />
+                  Mon profil
+                </button>
+
+                {/* Déconnexion */}
+                <button
+                  style={{ ...menuItemStyle, color: '#e53935', borderTop: '1px solid #f0f0f0' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(229,57,53,0.05)'; e.currentTarget.style.color = '#c62828'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'none';                  e.currentTarget.style.color = '#e53935'; }}
+                >
+                  <LogOut size={13} />
                   Déconnexion
                 </button>
+
               </div>
             )}
           </div>
+
         </div>
       </header>
 
