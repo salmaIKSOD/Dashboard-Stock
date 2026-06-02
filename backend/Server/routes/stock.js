@@ -73,7 +73,6 @@ router.get('/bases', async (req, res) => {
 router.get('/filtres', async (req, res) => {
   const { base, cl_no1, fa_codefamille } = req.query;
   if (!base) return res.status(400).json({ error: 'Paramètre base requis' });
-
   const cacheKey = `filtres:${base}:${cl_no1 || 'null'}:${fa_codefamille || 'null'}`;
   const cached = getCached(cacheKey);
   if (cached) {
