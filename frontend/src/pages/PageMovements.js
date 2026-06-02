@@ -34,7 +34,6 @@ function detectColumns(data) {
     date:       find('Date', 'DateJour'),
     article:    find('Article', 'AR_Ref'),
     design:     find('Designation', 'AR_Design', 'Désignation'),
-    depot:      find('Depot', 'DE_No'),
     nomDepot:   find('Nom Depot', 'NomDepot', 'DE_Intitule'),
     entrees:    find('Total Entrees', 'TotalEntree', 'TotalEntrees'),
     pruEntree:  find('PRU Entree', 'PRU_Entree_Jour', 'PRUEntree'),
@@ -221,9 +220,9 @@ function Th({ label, colKey, sortKey, sortDir, onSort, align = 'left' }) {
 
 // ── Export CSV ─────────────────────────────────────────────────
 function exportCSV(data, cols) {
-  const headers = ['Date','Dépôt','Nom Dépôt','Article','Désignation','Entrées','Prix Entrée','Sorties','Prix Sortie','Solde Permanent','Stock Final'];
+  const headers = ['Date','Nom Dépôt','Article','Désignation','Entrées','Prix Entrée','Sorties','Prix Sortie','Solde Permanent','Stock Final'];
   const rows = data.map(r => [
-    fmtDate(r[cols.date]), r[cols.depot]??'', r[cols.nomDepot]??'',
+    fmtDate(r[cols.date]), r[cols.nomDepot]??'',
     r[cols.article]??'', r[cols.design]??'',
     r[cols.entrees]??0, r[cols.pruEntree]??0,
     r[cols.sorties]??0, r[cols.pruSortie]??0,
@@ -644,7 +643,8 @@ export default function PageMovements() {
                 <table className="w-full text-sm border-collapse">
                   <colgroup>
                     <col style={{minWidth:95}} /><col style={{minWidth:100}} /><col style={{minWidth:180}} />
-                    <col style={{minWidth:60}} /><col style={{minWidth:130}} /><col style={{minWidth:85}} />
+                    {/* <col style={{minWidth:60}} /> */}
+                    <col style={{minWidth:130}} /><col style={{minWidth:85}} />
                     <col style={{minWidth:85}} /><col style={{minWidth:85}} /><col style={{minWidth:85}} />
                     <col style={{minWidth:110}} /><col style={{minWidth:120}} /><col style={{minWidth:100}} />
                   </colgroup>
@@ -653,7 +653,7 @@ export default function PageMovements() {
                       <Th label="Date"            colKey={cols.date}       sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
                       <Th label="Article"         colKey={cols.article}    sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
                       <Th label="Désignation" />
-                      <Th label="Dépôt"           colKey={cols.depot}      sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+                      {/* <Th label="Dépôt"           colKey={cols.depot}      sortKey={sortKey} sortDir={sortDir} onSort={handleSort} /> */}
                       <Th label="Nom Dépôt" />
                       <Th label="Entrées"         colKey={cols.entrees}    sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
                       <Th label="PRU Entrée"      colKey={cols.pruEntree}  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
@@ -678,9 +678,9 @@ export default function PageMovements() {
                             <span className="inline-block font-mono text-[0.72rem] text-[#0b7db0] bg-[rgba(18,166,224,0.07)] border border-[rgba(18,166,224,0.15)] rounded-md px-2 py-0.5">{row[cols.article]??'—'}</span>
                           </td>
                           <td className="px-4 py-3 text-[#444444] text-[0.75rem] whitespace-nowrap overflow-hidden text-ellipsis max-w-[180px]" title={row[cols.design]}>{row[cols.design]??'—'}</td>
-                          <td className="px-4 py-3 whitespace-nowrap">
+                          {/* <td className="px-4 py-3 whitespace-nowrap">
                             <span className="inline-block font-mono text-[0.72rem] text-[#666666] bg-[#f4f4f4] border border-[#e8e8e8] rounded-md px-2 py-0.5">{row[cols.depot]??'—'}</span>
-                          </td>
+                          </td> */}
                           <td className="px-4 py-3 text-[#555555] text-[0.75rem] whitespace-nowrap">{row[cols.nomDepot]??'—'}</td>
                           <td className="px-4 py-3 text-right">
                             {e>0 ? <span className="inline-block text-[#01773d] font-semibold text-[0.8rem] bg-[rgba(1,168,46,0.07)] border border-[rgba(1,168,46,0.18)] rounded-md px-2 py-0.5">{fmtNum(e)}</span>
