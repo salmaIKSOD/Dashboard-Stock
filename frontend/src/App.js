@@ -26,6 +26,9 @@ import PageTrends from './page/PageTrends';
 import PageDashboardReports from './page/PageDashboardReports';
 import PageFavorites from './page/PageFavorites';
 import AIPrevisions from './pages/AIPrevisions';
+import LoginPage from './pages/LoginPage';
+import { Signal } from 'lucide-react';
+import SignupPage from './pages/SignupPage';
 
 function ScrollToTop() { 
   const { pathname } = useLocation(); 
@@ -123,31 +126,6 @@ function useBreakpoint() {
   };
 }
 
-// function KpiCard({ title, value, unit, bottomContent, icon, iconBg, iconColor, valueColor, sparkColor, sparkData }) {
-//   return (
-//     <div className="bg-white border border-[#eeeeee] rounded-2xl px-6 py-5 shadow-[0_1px_8px_rgba(0,0,0,0.06)] flex flex-col flex-1 min-w-0">
-//       <div className="flex items-start justify-between gap-4">
-//         <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-//           style={{ background: iconBg, color: iconColor }}>
-//           {icon}
-//         </div>
-//         <div className="flex-1 min-w-0">
-//           <p className="text-[#888888] text-[0.8125rem] font-medium mb-[0.3rem] mt-0">{title}</p>
-//           <p className="text-[1.75rem] font-bold leading-none tracking-[-0.02em] m-0" style={{ color: valueColor }}>
-//             {fmtNum(value)}
-//           </p>
-//           <p className="text-[#bbbbbb] text-xs mt-[0.2rem] mb-0">{unit}</p>
-//         </div>
-//         <div className="pt-2 shrink-0">
-//           <Sparkline data={sparkData} color={sparkColor} />
-//         </div>
-//       </div>
-//       <div className="border-t border-[#f5f5f5] mt-[0.875rem] pt-[0.625rem]">
-//         {bottomContent}
-//       </div>
-//     </div>
-//   );
-// }
 function KpiCard({ title, value, unit, bottomContent, icon, iconBg, iconColor, valueColor, sparkColor, sparkData }) {
   return (
     <div
@@ -432,6 +410,9 @@ export default function App() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024);
 
+  // Vérifier si on est sur une page d'authentification
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
+
   useEffect(() => {
     const handler = () => {
       if (window.innerWidth < 1024) setSidebarOpen(false);
@@ -451,7 +432,7 @@ export default function App() {
     <DashboardProvider> 
     <div className="min-h-screen bg-[#f4f5f7]">
 
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      {/* <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {sidebarOpen && window.innerWidth < 1024 && (
         <div onClick={() => setSidebarOpen(false)}
@@ -462,11 +443,33 @@ export default function App() {
       <SidebarP
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen(o => !o)}
-      />
+      /> */}
+      {/* je le remplace avec  */}
+      {/* Ne pas afficher la sidebar sur les pages d'auth */}
+      {!isAuthPage && <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />}
+
+      {!isAuthPage && sidebarOpen && window.innerWidth < 1024 && (
+        <div onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 bg-[rgba(13,12,12,0.35)] z-20" />
+      )}
+
+      <ScrollToTop /> 
+      
+      {/* Ne pas afficher SidebarP sur les pages d'auth */}
+      {!isAuthPage && (
+        <SidebarP
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen(o => !o)}
+        />
+      )}
 
       <main
         className="flex flex-col gap-5 px-5 pb-5 pt-1 transition-[margin-left] duration-300 ease-in-out min-h-[calc(100vh-53px)]"
-        style={{ marginLeft: mainMarginLeft, marginTop: '28px' }}
+        // style={{ marginLeft: mainMarginLeft, marginTop: '28px' }}
+        style={{ 
+          marginLeft: !isAuthPage ? mainMarginLeft : 0,
+          marginTop: !isAuthPage ? '28px' : '0'
+        }}
       >
         <Routes>
           {/* ── Dashboard + inner tabs ── */}
@@ -500,6 +503,10 @@ export default function App() {
               <PageFavorites />
             </DashboardShell>
           } />
+
+          {/* ── Pages d'authentification (design only) ── */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
 
           {/* ── Pages principales ── */}
           <Route path="/stock-journalier" element={<PageStockJournalier />} />
