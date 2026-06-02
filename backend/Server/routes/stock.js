@@ -1,5 +1,4 @@
 // //  l'encien V3 avec base StockAnalytics //////////////////////////////////////////////////////////////////
-// // ── backend/Server/routes/stock.js — version optimisée ───────
 
 const express = require('express');
 const router  = express.Router();
