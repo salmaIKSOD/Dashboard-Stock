@@ -1,6 +1,6 @@
 // Utilisez ce template pour chaque page
 import React from 'react';
-import { PackageSearch } from 'lucide-react'; // changez l'icône
+import { Dice1, Divide, PackageSearch } from 'lucide-react'; // changez l'icône
 
 export default function PageStockJournalier() {
   return (

@@ -942,8 +942,8 @@ export default function PageCharts() {
         }}>
           <div style={{ width:7, height:7, borderRadius:'50%', background:C.blue, flexShrink:0 }} />
           <span>
-            Rendez-vous sur le <strong>Tableau de bord</strong> pour sélectionner
-            une base et une période, puis cliquez sur <strong>Filtrer</strong>.
+            Rendez-vous sur le <strong>Tableau de bord</strong> pour sélectionner une base et une
+            période, puis cliquez sur <strong>Filtrer</strong> pour afficher les graphes.
           </span>
         </div>
       )}
