@@ -195,4 +195,47 @@ router.delete('/cache', async (req, res) => {
   res.json({ message: `Cache vidé (${size} entrées) et rechargé` });
 });
 
+
+
+
+//  partie gestion des base des données 
+// GET /api/bases — liste des bases
+router.get('/bases', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const result = await pool.request().execute('stock.SP_GetBases');
+    res.json(result.recordset);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/bases — ajouter une base
+router.post('/bases', async (req, res) => {
+  const { baseName, baseLabel } = req.body;
+  try {
+    const pool = await getPool();
+    const result = await pool.request()
+      .input('BaseName',  sql.NVarChar(128), baseName)
+      .input('BaseLabel', sql.NVarChar(255), baseLabel)
+      .execute('stock.SP_AddBase');
+    res.json(result.recordset[0]); // { Statut, Base, Message }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/bases/:name — désactiver une base
+router.delete('/bases/:name', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const result = await pool.request()
+      .input('BaseName', sql.NVarChar(128), req.params.name)
+      .execute('stock.SP_RemoveBase');
+    res.json(result.recordset[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
