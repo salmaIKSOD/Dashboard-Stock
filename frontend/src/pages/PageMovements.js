@@ -23,6 +23,7 @@ const fmtNum = (n) => {
   return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(num);
 };
 
+// ✅ detectColumns corrigé
 function detectColumns(data) {
   if (!data || data.length === 0) return {};
   const keys = Object.keys(data[0]);
@@ -36,9 +37,10 @@ function detectColumns(data) {
     design:     find('Designation', 'AR_Design', 'Désignation'),
     nomDepot:   find('Nom Depot', 'NomDepot', 'DE_Intitule'),
     entrees:    find('Total Entrees', 'TotalEntree', 'TotalEntrees'),
-    pruEntree:  find('PRU Entree', 'PRU_Entree_Jour', 'PRUEntree'),
+    // ✅ Val Entrée / Val Sortie
+    pruEntree:  find('Valeur Entree', 'ValeurEntree', 'valeurentree', 'Valeur entree'),
     sorties:    find('Total Sorties', 'TotalSortie', 'TotalSorties'),
-    pruSortie:  find('PRU Sortie', 'PRU_Sortie_Jour', 'PRUSortie'),
+    pruSortie:  find('Valeur Sortie', 'ValeurSortie', 'valeursortie', 'Valeur sortie'),
     valeurMvt:  find('Total Valeur Mouvement', 'TotalValeurMouvement'),
     solde:      find('Valeur Finale Permanente', 'ValeurFinalePermanente', 'Valeur Finale (Permanente)', 'ValeurFinale'),
     stockFinal: find('Stock Final', 'StockFinal'),
@@ -56,7 +58,7 @@ function useBreakpoint() {
   return { isMobile: width < 640, isTablet: width >= 640 && width < 1024, isDesktop: width >= 1024 };
 }
 
-// ── Select avec portal — IDENTIQUE à Filters.js ───────────────
+// ── Select avec portal ────────────────────────────────────────
 function Select({ label, icon: Icon, value, onChange, options, placeholder, disabled, loading }) {
   const [open, setOpen] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState({ top: 0, left: 0, width: 0 });
@@ -159,7 +161,7 @@ function Select({ label, icon: Icon, value, onChange, options, placeholder, disa
   );
 }
 
-// ── DateInputInline — IDENTIQUE à Filters.js ─────────────────
+// ── DateInputInline ───────────────────────────────────────────
 function DateInputInline({ label, value, onChange, min, max }) {
   const [focused, setFocused] = useState(false);
   return (
@@ -220,13 +222,20 @@ function Th({ label, colKey, sortKey, sortDir, onSort, align = 'left' }) {
 
 // ── Export CSV ─────────────────────────────────────────────────
 function exportCSV(data, cols) {
-  const headers = ['Date','Nom Dépôt','Article','Désignation','Entrées','Prix Entrée','Sorties','Prix Sortie','Solde Permanent','Stock Final'];
+  // ✅ Headers renommés
+  const headers = ['Date','Nom Dépôt','Article','Désignation','Entrées','Val Entrée','Sorties','Val Sortie','Valeur Mvt','Solde Permanent','Stock Final'];
   const rows = data.map(r => [
-    fmtDate(r[cols.date]), r[cols.nomDepot]??'',
-    r[cols.article]??'', r[cols.design]??'',
-    r[cols.entrees]??0, r[cols.pruEntree]??0,
-    r[cols.sorties]??0, r[cols.pruSortie]??0,
-    r[cols.solde]??0, r[cols.stockFinal]??0,
+    fmtDate(r[cols.date]),
+    r[cols.nomDepot]  ?? '',
+    r[cols.article]   ?? '',
+    r[cols.design]    ?? '',
+    r[cols.entrees]   ?? 0,
+    r[cols.pruEntree] ?? 0,
+    r[cols.sorties]   ?? 0,
+    r[cols.pruSortie] ?? 0,
+    r[cols.valeurMvt] ?? 0,
+    r[cols.solde]     ?? 0,
+    r[cols.stockFinal]?? 0,
   ]);
   const csv = [headers,...rows].map(row => row.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(';')).join('\n');
   const blob = new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
@@ -267,27 +276,23 @@ export default function PageMovements() {
 
   const { isMobile, isTablet } = useBreakpoint();
 
-  // États locaux — miroir de currentFilters + article
   const [base,      setBase]      = useState(currentFilters.base      || '');
   const [dateDebut, setDateDebut] = useState(currentFilters.dateDebut || '');
   const [dateFin,   setDateFin]   = useState(currentFilters.dateFin   || '');
   const [depot,     setDepot]     = useState('');
   const [article,   setArticle]   = useState('');
 
-  // Données mouvements
   const [mouvData,    setMouvData]    = useState(null);
   const [loading,     setLoading]     = useState(false);
   const [error,       setError]       = useState(null);
   const [isFiltering, setIsFiltering] = useState(false);
 
-  // Options
   const [bases,          setBases]          = useState([]);
   const [articleOptions, setArticleOptions] = useState([]);
   const [depotOptions,   setDepotOptions]   = useState([]);
   const [loadingBases,   setLoadingBases]   = useState(true);
   const [loadingFiltres, setLoadingFiltres] = useState(false);
 
-  // Tri + pagination
   const [sortKey, setSortKey] = useState(null);
   const [sortDir, setSortDir] = useState(null);
   const [page,    setPage]    = useState(1);
@@ -295,7 +300,6 @@ export default function PageMovements() {
 
   const didInit = useRef(false);
 
-  // ── Charger les bases au montage
   useEffect(() => {
     fetchBases()
       .then(data => setBases(data.map(b => ({ value: b.BaseName, label: b.BaseLabel || b.BaseName }))))
@@ -303,8 +307,7 @@ export default function PageMovements() {
       .finally(() => setLoadingBases(false));
   }, []);
 
-  // ── Sync entrant : si le dashboard change base/dates (ex: reset), on met à jour ici
-  const prevBase = useRef(currentFilters.base);
+  const prevBase  = useRef(currentFilters.base);
   const prevDebut = useRef(currentFilters.dateDebut);
   const prevFin   = useRef(currentFilters.dateFin);
   useEffect(() => {
@@ -322,7 +325,6 @@ export default function PageMovements() {
     }
   }, [currentFilters.base, currentFilters.dateDebut, currentFilters.dateFin]);
 
-  // ── Charger articles + dépôts quand la base change
   const loadFiltres = useCallback(async (selectedBase) => {
     if (!selectedBase) return;
     setLoadingFiltres(true);
@@ -336,7 +338,6 @@ export default function PageMovements() {
 
   useEffect(() => { if (base) loadFiltres(base); }, [base, loadFiltres]);
 
-  // ── Chargement initial auto
   useEffect(() => {
     if (didInit.current || !currentFilters.base) return;
     didInit.current = true;
@@ -353,8 +354,6 @@ export default function PageMovements() {
     finally { setLoading(false); }
   }, []);
 
-  // ── Handler "Filtrer"
-  // => charge les mouvements ET recharge le dashboard avec les mêmes base+dates
   const handleFilter = async () => {
     if (!base) return;
     setIsFiltering(true);
@@ -364,15 +363,12 @@ export default function PageMovements() {
       base,
       dateDebut: dateDebut || null,
       dateFin:   dateFin   || null,
-      // depot:     depot     || null,
-      article:   null, // le dashboard n'a pas d'article
+      article:   null,
     };
 
-    // 1. Mettre à jour le contexte partagé
     setCurrentFilters(newFilters);
     setHasFiltered(true);
 
-    // 2. Recharger le dashboard (même base + dates)
     const dashParams = {
       base,
       dateDebut: dateDebut || null,
@@ -387,7 +383,6 @@ export default function PageMovements() {
     };
     triggerDashboardReload(dashParams);
 
-    // 3. Charger les mouvements avec article + dépôt en plus
     await doLoadMouv({
       base,
       dateDebut: dateDebut || null,
@@ -399,19 +394,16 @@ export default function PageMovements() {
     setIsFiltering(false);
   };
 
-  // ── Handler changement de base
   const handleBaseChange = (val) => {
     setBase(val);
-    setArticle(''); 
+    setArticle('');
     setDepot('');
     setArticleOptions([]); setDepotOptions([]);
     setMouvData(null);
     if (val) loadFiltres(val);
-
     setCurrentFilters(prev => ({ ...prev, base: val || null }));
   };
 
-  // ── Reset
   const handleReset = () => {
     const today = new Date();
     const yyyy = today.getFullYear();
@@ -421,7 +413,7 @@ export default function PageMovements() {
     const newFin   = `${yyyy}-${mm}-${dd}`;
 
     setBase(currentFilters.base || '');
-    setDateDebut(newDebut);   // ← plus les dates "mémorisées" du dernier filtre
+    setDateDebut(newDebut);
     setDateFin(newFin);
     setArticle(''); setDepot('');
     setMouvData(null); setError(null); setPage(1);
@@ -450,15 +442,16 @@ export default function PageMovements() {
     setPage(1);
   };
 
+  // ✅ KPI corrigé — totalS utilise les quantités sorties (correct)
   const kpis = useMemo(() => {
     if (!sorted.length || !cols.entrees) return null;
-    let totalE=0, totalS=0;
+    let totalE = 0, totalS = 0;
     for (const r of sorted) {
-      totalE += Number(r[cols.entrees]??0);
-      totalS += Number(r[cols.sorties]??0);
+      totalE += Number(r[cols.entrees] ?? 0);
+      totalS += Number(r[cols.sorties] ?? 0);
     }
-    const articles = new Set(sorted.map(r=>r[cols.article]).filter(Boolean));
-    const depots   = new Set(sorted.map(r=>r[cols.depot]).filter(Boolean));
+    const articles = new Set(sorted.map(r => r[cols.article]).filter(Boolean));
+    const depots   = new Set(sorted.map(r => r[cols.nomDepot]).filter(Boolean));
     return { totalE, totalS, nbArticles: articles.size, nbDepots: depots.size };
   }, [sorted, cols]);
 
@@ -474,15 +467,11 @@ export default function PageMovements() {
 
       <div className="flex flex-col gap-5">
 
-        {/* ══════════════════════════════════════════════════════
-            PANNEAU FILTRES — design identique à Filters.js
-            ══════════════════════════════════════════════════ */}
+        {/* ── PANNEAU FILTRES ── */}
         <div className="bg-white border border-[#e4e4e4] rounded-[1.1rem] shadow-[0_2px_12px_rgba(18,166,224,0.07),0_1px_3px_rgba(0,0,0,0.05)] overflow-visible animate-[fadeSlideIn_0.3s_ease_both]">
 
           {/* HEADER */}
           <div className="flex flex-col gap-3 px-5 py-4 bg-gradient-to-r from-[#f8fcff] to-[#f0f9ff] border-b border-[#e8f4fb] rounded-[1.1rem] rounded-b-none sm:flex-row sm:items-center sm:flex-wrap">
-
-            {/* Titre */}
             <div className="flex items-center gap-[0.55rem] flex-shrink-0">
               <div className="w-7 h-7 rounded-[0.55rem] bg-gradient-to-br from-[#12a6e0] to-[#0d8fc4] flex items-center justify-center shadow-md shadow-[rgba(18,166,224,0.30)]">
                 <Eye size={13} className="text-white" />
@@ -491,11 +480,7 @@ export default function PageMovements() {
                 Filtres de recherche
               </span>
             </div>
-
-            {/* Séparateur desktop */}
             <div className="hidden sm:block w-px h-[22px] flex-shrink-0 bg-gradient-to-b from-transparent via-[#c8e8f8] to-transparent" />
-
-            {/* DATES */}
             <div className="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:flex-1 sm:gap-2">
               <DateInputInline label="Début" value={dateDebut} onChange={setDateDebut} max={dateFin||undefined} />
               <div className="hidden sm:block text-[#c5c5c5] text-xs flex-shrink-0">→</div>
@@ -506,37 +491,23 @@ export default function PageMovements() {
           {/* BODY */}
           <div className="p-5">
             <div className={`grid ${gridCols} gap-4`}>
-              {/* Base SAGE */}
               <Select
-                label="Base SAGE"
-                icon={Database}
-                value={base}
-                onChange={handleBaseChange}
-                options={bases}
-                placeholder="Sélectionner une base"
+                label="Base SAGE" icon={Database}
+                value={base} onChange={handleBaseChange}
+                options={bases} placeholder="Sélectionner une base"
                 loading={loadingBases}
               />
-              {/* Article */}
               <Select
-                label="Article"
-                icon={Search}
-                value={article}
-                onChange={setArticle}
-                options={articleOptions}
-                placeholder="Tous les articles"
-                disabled={!base}
-                loading={loadingFiltres && !articleOptions.length}
+                label="Article" icon={Search}
+                value={article} onChange={setArticle}
+                options={articleOptions} placeholder="Tous les articles"
+                disabled={!base} loading={loadingFiltres && !articleOptions.length}
               />
-              {/* Dépôt */}
               <Select
-                label="Dépôt"
-                icon={Warehouse}
-                value={depot}
-                onChange={setDepot}
-                options={depotOptions}
-                placeholder="Tous les dépôts"
-                disabled={!base}
-                loading={loadingFiltres && !depotOptions.length}
+                label="Dépôt" icon={Warehouse}
+                value={depot} onChange={setDepot}
+                options={depotOptions} placeholder="Tous les dépôts"
+                disabled={!base} loading={loadingFiltres && !depotOptions.length}
               />
             </div>
 
@@ -569,7 +540,7 @@ export default function PageMovements() {
           </div>
         </div>
 
-        {/* ── ERREUR ─────────────────────────────────────────── */}
+        {/* ── ERREUR ── */}
         {error && (
           <div className="bg-[rgba(229,57,53,0.06)] border border-[rgba(229,57,53,0.20)] rounded-xl px-5 py-4 text-[#c62828] text-sm flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-[#e53935] shrink-0" />
@@ -577,7 +548,7 @@ export default function PageMovements() {
           </div>
         )}
 
-        {/* ── AVERTISSEMENT ──────────────────────────────────── */}
+        {/* ── AVERTISSEMENT ── */}
         {!base && !loading && (
           <div className="bg-[rgba(18,166,224,0.04)] border border-[rgba(18,166,224,0.15)] rounded-xl px-5 py-4 text-[#0b7db0] text-sm flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-[#12a6e0] shrink-0 animate-pulse" />
@@ -585,19 +556,35 @@ export default function PageMovements() {
           </div>
         )}
 
-        {/* ── KPIs ───────────────────────────────────────────── */}
+        {/* ── KPIs ── */}
         {kpis && !loading && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <KpiCard label="Total Entrées"   value={fmtNum(kpis.totalE)} sub="unités reçues sur la période"
-              color="#01a82e" bgColor="rgba(1,168,46,0.06)" borderColor="rgba(1,168,46,0.18)" iconBg="rgba(1,168,46,0.08)" icon={PackageCheck} />
-            <KpiCard label="Total Sorties"   value={fmtNum(kpis.totalS)} sub="unités expédiées sur la période"
-              color="#e53935" bgColor="rgba(229,57,53,0.06)" borderColor="rgba(229,57,53,0.18)" iconBg="rgba(229,57,53,0.08)" icon={PackageOpen} />
-            <KpiCard label="Articles uniques" value={kpis.nbArticles} sub={`sur ${kpis.nbDepots} dépôt${kpis.nbDepots>1?'s':''}`}
-              color="#12a6e0" bgColor="rgba(18,166,224,0.06)" borderColor="rgba(18,166,224,0.18)" iconBg="rgba(18,166,224,0.08)" icon={Boxes} />
+            <KpiCard
+              label="Total Entrées"
+              value={fmtNum(kpis.totalE)}
+              sub="unités reçues sur la période"
+              color="#01a82e" bgColor="rgba(1,168,46,0.06)" borderColor="rgba(1,168,46,0.18)" iconBg="rgba(1,168,46,0.08)"
+              icon={PackageCheck}
+            />
+            {/* ✅ KPI Total Sorties corrigé */}
+            <KpiCard
+              label="Total Sorties"
+              value={fmtNum(kpis.totalS)}
+              sub="unités expédiées sur la période"
+              color="#e53935" bgColor="rgba(229,57,53,0.06)" borderColor="rgba(229,57,53,0.18)" iconBg="rgba(229,57,53,0.08)"
+              icon={PackageOpen}
+            />
+            <KpiCard
+              label="Articles uniques"
+              value={kpis.nbArticles}
+              sub={`sur ${kpis.nbDepots} dépôt${kpis.nbDepots>1?'s':''}`}
+              color="#12a6e0" bgColor="rgba(18,166,224,0.06)" borderColor="rgba(18,166,224,0.18)" iconBg="rgba(18,166,224,0.08)"
+              icon={Boxes}
+            />
           </div>
         )}
 
-        {/* ── TABLEAU ────────────────────────────────────────── */}
+        {/* ── TABLEAU ── */}
         {(loading || mouvData !== null) && (
           <div className="bg-white border border-[#e8e8e8] rounded-2xl overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.06)]">
 
@@ -643,9 +630,8 @@ export default function PageMovements() {
                 <table className="w-full text-sm border-collapse">
                   <colgroup>
                     <col style={{minWidth:95}} /><col style={{minWidth:100}} /><col style={{minWidth:180}} />
-                    {/* <col style={{minWidth:60}} /> */}
                     <col style={{minWidth:130}} /><col style={{minWidth:85}} />
-                    <col style={{minWidth:85}} /><col style={{minWidth:85}} /><col style={{minWidth:85}} />
+                    <col style={{minWidth:95}} /><col style={{minWidth:85}} /><col style={{minWidth:95}} />
                     <col style={{minWidth:110}} /><col style={{minWidth:120}} /><col style={{minWidth:100}} />
                   </colgroup>
                   <thead>
@@ -653,12 +639,13 @@ export default function PageMovements() {
                       <Th label="Date"            colKey={cols.date}       sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
                       <Th label="Article"         colKey={cols.article}    sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
                       <Th label="Désignation" />
-                      {/* <Th label="Dépôt"           colKey={cols.depot}      sortKey={sortKey} sortDir={sortDir} onSort={handleSort} /> */}
                       <Th label="Nom Dépôt" />
                       <Th label="Entrées"         colKey={cols.entrees}    sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
-                      <Th label="PRU Entrée"      colKey={cols.pruEntree}  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
+                      {/* ✅ Val Entrée */}
+                      <Th label="Val Entrée"      colKey={cols.pruEntree}  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
                       <Th label="Sorties"         colKey={cols.sorties}    sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
-                      <Th label="PRU Sortie"      colKey={cols.pruSortie}  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
+                      {/* ✅ Val Sortie */}
+                      <Th label="Val Sortie"      colKey={cols.pruSortie}  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
                       <Th label="Valeur Mvt"      colKey={cols.valeurMvt}  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
                       <Th label="Solde Permanent" colKey={cols.solde}      sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
                       <Th label="Stock Final"     colKey={cols.stockFinal} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
@@ -666,58 +653,110 @@ export default function PageMovements() {
                   </thead>
                   <tbody>
                     {paginated.map((row, idx) => {
-                      const e = Number(row[cols.entrees]??0), s = Number(row[cols.sorties]??0);
-                      const pruE = Number(row[cols.pruEntree]??0), pruS = Number(row[cols.pruSortie]??0);
-                      const valeurMvt = Number(row[cols.valeurMvt]??0);
-                      const solde = Number(row[cols.solde]??0), stockFinal = Number(row[cols.stockFinal]??0);
-                      const hasMvt = e>0||s>0;
+                      const e          = Number(row[cols.entrees]   ?? 0);
+                      const pruE       = Number(row[cols.pruEntree] ?? 0);
+                      const s          = Number(row[cols.sorties]   ?? 0);
+                      const pruS       = Number(row[cols.pruSortie] ?? 0);
+                      const valeurMvt  = Number(row[cols.valeurMvt] ?? 0);
+                      const solde      = Number(row[cols.solde]     ?? 0);
+                      const stockFinal = Number(row[cols.stockFinal]?? 0);
+                      const hasMvt     = e > 0 || s > 0;
+
                       return (
                         <tr key={idx} className={`border-b border-[#f8f8f8] transition-colors duration-100 ${hasMvt?'hover:bg-[rgba(18,166,224,0.03)]':'opacity-60 hover:bg-[#fafafa]'}`}>
-                          <td className="px-4 py-3 font-mono text-[0.75rem] text-[#888888] whitespace-nowrap">{fmtDate(row[cols.date])}</td>
+
+                          {/* Date */}
+                          <td className="px-4 py-3 font-mono text-[0.75rem] text-[#888888] whitespace-nowrap">
+                            {fmtDate(row[cols.date])}
+                          </td>
+
+                          {/* Article */}
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="inline-block font-mono text-[0.72rem] text-[#0b7db0] bg-[rgba(18,166,224,0.07)] border border-[rgba(18,166,224,0.15)] rounded-md px-2 py-0.5">{row[cols.article]??'—'}</span>
+                            <span className="inline-block font-mono text-[0.72rem] text-[#0b7db0] bg-[rgba(18,166,224,0.07)] border border-[rgba(18,166,224,0.15)] rounded-md px-2 py-0.5">
+                              {row[cols.article]??'—'}
+                            </span>
                           </td>
-                          <td className="px-4 py-3 text-[#444444] text-[0.75rem] whitespace-nowrap overflow-hidden text-ellipsis max-w-[180px]" title={row[cols.design]}>{row[cols.design]??'—'}</td>
-                          {/* <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="inline-block font-mono text-[0.72rem] text-[#666666] bg-[#f4f4f4] border border-[#e8e8e8] rounded-md px-2 py-0.5">{row[cols.depot]??'—'}</span>
-                          </td> */}
-                          <td className="px-4 py-3 text-[#555555] text-[0.75rem] whitespace-nowrap">{row[cols.nomDepot]??'—'}</td>
-                          <td className="px-4 py-3 text-right">
-                            {e>0 ? <span className="inline-block text-[#01773d] font-semibold text-[0.8rem] bg-[rgba(1,168,46,0.07)] border border-[rgba(1,168,46,0.18)] rounded-md px-2 py-0.5">{fmtNum(e)}</span>
-                                 : <span className="text-[#e0e0e0] text-[0.75rem]">—</span>}
+
+                          {/* Désignation */}
+                          <td className="px-4 py-3 text-[#444444] text-[0.75rem] whitespace-nowrap overflow-hidden text-ellipsis max-w-[180px]" title={row[cols.design]}>
+                            {row[cols.design]??'—'}
                           </td>
-                          <td className="px-4 py-3 text-right">
-                            {pruE>0 ? <span className="text-[#555555] text-[0.75rem]">{fmtNum(pruE)}</span>
-                                    : <span className="text-[#e0e0e0] text-[0.75rem]">—</span>}
+
+                          {/* Nom Dépôt */}
+                          <td className="px-4 py-3 text-[#555555] text-[0.75rem] whitespace-nowrap">
+                            {row[cols.nomDepot]??'—'}
                           </td>
+
+                          {/* Entrées (quantité) */}
                           <td className="px-4 py-3 text-right">
-                            {s>0 ? <span className="inline-block text-[#b71c1c] font-semibold text-[0.8rem] bg-[rgba(229,57,53,0.07)] border border-[rgba(229,57,53,0.18)] rounded-md px-2 py-0.5">{fmtNum(s)}</span>
-                                 : <span className="text-[#e0e0e0] text-[0.75rem]">—</span>}
+                            {e > 0
+                              ? <span className="inline-block text-[#01773d] font-semibold text-[0.8rem] bg-[rgba(1,168,46,0.07)] border border-[rgba(1,168,46,0.18)] rounded-md px-2 py-0.5">{fmtNum(e)}</span>
+                              : <span className="text-[#e0e0e0] text-[0.75rem]">—</span>
+                            }
                           </td>
+
+                          {/* ✅ Val Entrée */}
                           <td className="px-4 py-3 text-right">
-                            {pruS>0 ? <span className="text-[#555555] text-[0.75rem]">{fmtNum(pruS)}</span>
-                                    : <span className="text-[#e0e0e0] text-[0.75rem]">—</span>}
+                            {pruE > 0
+                              ? <span className="inline-block text-[#01773d] font-semibold text-[0.8rem] bg-[rgba(1,168,46,0.07)] border border-[rgba(1,168,46,0.18)] rounded-md px-2 py-0.5">{fmtNum(pruE)}</span>
+                              : <span className="text-[#e0e0e0] text-[0.75rem]">—</span>
+                            }
                           </td>
+
+                          {/* Sorties (quantité) */}
                           <td className="px-4 py-3 text-right">
-                            {valeurMvt!==0
+                            {s > 0
+                              ? <span className="inline-block text-[#b71c1c] font-semibold text-[0.8rem] bg-[rgba(229,57,53,0.07)] border border-[rgba(229,57,53,0.18)] rounded-md px-2 py-0.5">{fmtNum(s)}</span>
+                              : <span className="text-[#e0e0e0] text-[0.75rem]">—</span>
+                            }
+                          </td>
+
+                          {/* ✅ Val Sortie */}
+                          <td className="px-4 py-3 text-right">
+                            {pruS > 0
+                              ? <span className="inline-block text-[#b71c1c] font-semibold text-[0.8rem] bg-[rgba(229,57,53,0.07)] border border-[rgba(229,57,53,0.18)] rounded-md px-2 py-0.5">{fmtNum(pruS)}</span>
+                              : <span className="text-[#e0e0e0] text-[0.75rem]">—</span>
+                            }
+                          </td>
+
+                          {/* Valeur Mvt */}
+                          <td className="px-4 py-3 text-right">
+                            {valeurMvt !== 0
                               ? <span className="inline-block text-[0.75rem] font-medium rounded-md px-2 py-0.5 border"
-                                  style={valeurMvt>0?{color:'#4a4a4a',background:'#f7f7f7',borderColor:'#e4e4e4'}:{color:'#b71c1c',background:'rgba(229,57,53,0.05)',borderColor:'rgba(229,57,53,0.15)'}}>{fmtNum(valeurMvt)}</span>
-                              : <span className="text-[#e0e0e0] text-[0.75rem]">—</span>}
+                                  style={valeurMvt>0
+                                    ? {color:'#4a4a4a', background:'#f7f7f7', borderColor:'#e4e4e4'}
+                                    : {color:'#b71c1c', background:'rgba(229,57,53,0.05)', borderColor:'rgba(229,57,53,0.15)'}
+                                  }>{fmtNum(valeurMvt)}</span>
+                              : <span className="text-[#e0e0e0] text-[0.75rem]">—</span>
+                            }
                           </td>
+
+                          {/* Solde Permanent */}
                           <td className="px-4 py-3 text-right">
                             {cols.solde
                               ? <span className="inline-block font-semibold text-[0.8rem] rounded-md px-2 py-0.5 border"
-                                  style={solde>0?{color:'#0b7db0',background:'rgba(18,166,224,0.07)',borderColor:'rgba(18,166,224,0.18)'}:solde<0?{color:'#b71c1c',background:'rgba(229,57,53,0.07)',borderColor:'rgba(229,57,53,0.18)'}:{color:'#c5c5c5',background:'#fafafa',borderColor:'#eeeeee'}}>{fmtNum(solde)}</span>
-                              : <span className="text-[0.7rem] italic text-[#cccccc]">—</span>}
+                                  style={solde>0
+                                    ? {color:'#0b7db0', background:'rgba(18,166,224,0.07)', borderColor:'rgba(18,166,224,0.18)'}
+                                    : solde<0
+                                    ? {color:'#b71c1c', background:'rgba(229,57,53,0.07)', borderColor:'rgba(229,57,53,0.18)'}
+                                    : {color:'#c5c5c5', background:'#fafafa', borderColor:'#eeeeee'}
+                                  }>{fmtNum(solde)}</span>
+                              : <span className="text-[0.7rem] italic text-[#cccccc]">—</span>
+                            }
                           </td>
+
+                          {/* Stock Final */}
                           <td className="px-4 py-3 text-right">
-                            {!cols.stockFinal ? <span className="text-[0.7rem] italic text-[#cccccc]">—</span>
-                              : stockFinal>0
+                            {!cols.stockFinal
+                              ? <span className="text-[0.7rem] italic text-[#cccccc]">—</span>
+                              : stockFinal > 0
                               ? <span className="inline-flex items-center gap-1 text-[#c47a00] font-semibold text-[0.8rem] bg-[rgba(224,138,0,0.08)] border border-[rgba(224,138,0,0.2)] rounded-md px-2 py-0.5"><TrendingUp size={11}/>{fmtNum(stockFinal)}</span>
-                              : stockFinal<0
+                              : stockFinal < 0
                               ? <span className="inline-flex items-center gap-1 text-[#b71c1c] font-semibold text-[0.8rem] bg-[rgba(229,57,53,0.07)] border border-[rgba(229,57,53,0.18)] rounded-md px-2 py-0.5"><TrendingDown size={11}/>{fmtNum(stockFinal)}</span>
-                              : <span className="inline-flex items-center gap-1 text-[#c5c5c5] text-[0.75rem] bg-[#fafafa] border border-[#eeeeee] rounded-md px-2 py-0.5"><Minus size={10}/>0</span>}
+                              : <span className="inline-flex items-center gap-1 text-[#c5c5c5] text-[0.75rem] bg-[#fafafa] border border-[#eeeeee] rounded-md px-2 py-0.5"><Minus size={10}/>0</span>
+                            }
                           </td>
+
                         </tr>
                       );
                     })}
@@ -726,6 +765,7 @@ export default function PageMovements() {
               </div>
             )}
 
+            {/* Pagination */}
             {!loading && totalPages > 1 && (
               <div className="flex items-center justify-between px-5 py-3 border-t border-[#f0f0f0]">
                 <span className="text-[#c5c5c5] text-[0.75rem]">Page {page} / {totalPages}</span>
