@@ -106,24 +106,38 @@ export default function HeaderG({ sidebarOpen, onToggleSidebar }) {
               <span className="hidden sm:inline" style={{ color: '#666666', fontSize: '0.75rem' }}>Admin</span>
             </button>
 
-          {userOpen && (
-            <div style={{
+            {userOpen && (
+              <div style={{
                 position: 'absolute', right: 0, top: 'calc(100% + 0.5rem)',
                 background: '#ffffff', border: '1px solid #e8e8e8', borderRadius: '0.75rem',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.10)', zIndex: 50, overflow: 'hidden', width: '208px',
-            }}>
+              }}>
                 <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #f0f0f0' }}>
-                <p style={{ color: '#0d0c0c', fontSize: '0.75rem', fontWeight: 500, margin: 0 }}>Administrateur</p>
-                <p style={{ color: '#c5c5c5', fontSize: '0.625rem', margin: '2px 0 0' }}>admin@sage.local</p>
+                  <p style={{ color: '#0d0c0c', fontSize: '0.75rem', fontWeight: 500, margin: 0 }}>Administrateur</p>
+                  <p style={{ color: '#c5c5c5', fontSize: '0.625rem', margin: '2px 0 0' }}>admin@sage.local</p>
                 </div>
 
+                {/* ← Retour dashboard */}
                 <button
-                style={{ ...menuItemStyle, color: '#e53935' }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(229,57,53,0.05)'; e.currentTarget.style.color = '#c62828'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#e53935'; }}>
-                <LogOut size={13} /> Déconnexion
+                  style={menuItemStyle}
+                  onClick={() => { navigate('/'); setUserOpen(false); }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#f5f5f5'; e.currentTarget.style.color = '#0d0c0c'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'none';    e.currentTarget.style.color = '#555555'; }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                  </svg>
+                  Retour au dashboard
                 </button>
-            </div>
+
+                {/* Déconnexion */}
+                <button
+                  style={{ ...menuItemStyle, color: '#e53935', borderTop: '1px solid #f0f0f0' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(229,57,53,0.05)'; e.currentTarget.style.color = '#c62828'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#e53935'; }}>
+                  <LogOut size={13} /> Déconnexion
+                </button>
+              </div>
             )}
           </div>
         </div>
