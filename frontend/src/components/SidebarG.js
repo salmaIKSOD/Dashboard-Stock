@@ -64,30 +64,18 @@ export default function SidebarG({ open, onClose }) {
       </nav>
 
       {/* ← Retour dashboard — en bas avant le footer */}
-      {/* <div className="px-3 pb-3" style={{ borderTop: '1px solid #f0f0f0', paddingTop: '0.75rem' }}>
+      <div className="px-3 pb-3" style={{ borderTop: '1px solid #f0f0f0', paddingTop: '0.75rem' }}>
         <button
           onClick={() => navigate('/')}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-150"
-          style={{ background: 'rgba(18,166,224,0.06)', color: '#12a6e0', border: 'none', cursor: 'pointer' }}
-          onMouseEnter={e => e.currentTarget.style.background = 'rgba(18,166,224,0.12)'}
-          onMouseLeave={e => e.currentTarget.style.background = 'rgba(18,166,224,0.06)'}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150"
+          style={{ background: 'linear-gradient(135deg, #12a6e0, #0d8fc4)', color: '#ffffff', border: 'none', cursor: 'pointer', boxShadow: '0 2px 8px rgba(18,166,224,0.30)' }}
+          onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 14px rgba(18,166,224,0.45)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+          onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 2px 8px rgba(18,166,224,0.30)'; e.currentTarget.style.transform = 'translateY(0)'; }}
         >
-          <ArrowLeft size={14} />
-          <span className="text-xs font-medium">Retour au dashboard</span>
+          <ArrowLeft size={16} style={{ flexShrink: 0 }} />
+          <span className="flex-1 text-left">Retour au dashboard</span>
         </button>
-      </div> */}
-      <div className="px-3 pb-3" style={{ borderTop: '1px solid #f0f0f0', paddingTop: '0.75rem' }}>
-  <button
-    onClick={() => navigate('/')}
-    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150"
-    style={{ background: 'linear-gradient(135deg, #12a6e0, #0d8fc4)', color: '#ffffff', border: 'none', cursor: 'pointer', boxShadow: '0 2px 8px rgba(18,166,224,0.30)' }}
-    onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 14px rgba(18,166,224,0.45)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-    onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 2px 8px rgba(18,166,224,0.30)'; e.currentTarget.style.transform = 'translateY(0)'; }}
-  >
-    <ArrowLeft size={16} style={{ flexShrink: 0 }} />
-    <span className="flex-1 text-left">Retour au dashboard</span>
-  </button>
-</div>
+      </div>
 
       {/* Footer */}
       <div className="px-5 py-4 shrink-0" style={{ borderTop: '1px solid #f0f0f0' }}>
