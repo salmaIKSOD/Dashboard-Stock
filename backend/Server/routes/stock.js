@@ -65,24 +65,6 @@ router.get('/bases', async (req, res) => {
 });
 
 // ── POST /api/bases — ajouter une base ────────────────────────
-// router.post('/bases', async (req, res) => {
-//   const { baseName, baseLabel } = req.body;
-//   if (!baseName) return res.status(400).json({ error: 'Paramètre baseName requis' });
-//   try {
-//     const pool   = await getPool();
-//     const result = await pool.request()
-//       .input('BaseName',  sql.NVarChar(128), baseName)
-//       .input('BaseLabel', sql.NVarChar(255), baseLabel || baseName)
-//       .execute('stock.SP_AddBase');
-//     // Invalider le cache bases
-//     cache.delete('bases');
-//     setTimeout(warmupCache, 500);
-//     res.json(result.recordset[0]); // { Statut, Base, Message }
-//   } catch (err) {
-//     console.error('[POST /bases]', err.message);
-//     res.status(500).json({ error: err.message });
-//   }
-// });
 router.post('/bases', async (req, res) => {
   const { baseName, baseLabel } = req.body;
   if (!baseName) return res.status(400).json({ error: 'Paramètre baseName requis' });
@@ -106,21 +88,6 @@ router.post('/bases', async (req, res) => {
 });
 
 // ── DELETE /api/bases/:name — désactiver une base ─────────────
-// router.delete('/bases/:name', async (req, res) => {
-//   try {
-//     const pool   = await getPool();
-//     const result = await pool.request()
-//       .input('BaseName', sql.NVarChar(128), req.params.name)
-//       .execute('stock.SP_RemoveBase');
-//     // Invalider le cache
-//     cache.delete('bases');
-//     setTimeout(warmupCache, 500);
-//     res.json(result.recordset[0]);
-//   } catch (err) {
-//     console.error('[DELETE /bases/:name]', err.message);
-//     res.status(500).json({ error: err.message });
-//   }
-// });
 router.delete('/bases/:name', async (req, res) => {
   try {
     const pool   = await getPool();

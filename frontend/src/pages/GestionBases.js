@@ -325,30 +325,6 @@ export default function GestionBases() {
 
   useEffect(() => { fetchBases(); }, []);
 
-  // const handleAdd = async () => {
-  //   if (!baseName) {
-  //     return setMessage({ type: 'error', text: 'Veuillez entrer le nom de la base.' });
-  //   }
-  //   setLoading(true);
-  //   setMessage(null);
-  //   try {
-  //     const res = await axios.post(`${API}/api/bases`, {
-  //       baseName,
-  //       baseLabel: baseName,
-  //     });
-  //     // Vider le cache Node + SQL
-  //     await axios.delete(`${API}/api/cache`);
-  //     setMessage({ type: 'success', text: res.data.Message });
-  //     setBaseName('');
-  //     // Attendre que le warmup finisse puis recharger
-  //     setTimeout(() => fetchBases(), 2000);
-  //   } catch (err) {
-  //     setMessage({ type: 'error', text: err.response?.data?.error || 'Erreur serveur.' });
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   const handleAdd = async () => {
     if (!baseName) {
       return setMessage({ type: 'error', text: 'Veuillez entrer le nom de la base.' });
@@ -370,22 +346,6 @@ export default function GestionBases() {
       setLoading(false);
     }
   };
-  // const handleRemove = async (name) => {
-  //   if (!window.confirm(`Désactiver la base ${name} ?`)) return;
-  //   setLoading(true);
-  //   try {
-  //     const res = await axios.delete(`${API}/api/bases/${name}`);
-  //     // Vider le cache Node + SQL
-  //     await axios.delete(`${API}/api/cache`);
-  //     setMessage({ type: 'success', text: res.data.Message });
-  //     // Attendre que le warmup finisse puis recharger
-  //     setTimeout(() => fetchBases(), 2000);
-  //   } catch (err) {
-  //     setMessage({ type: 'error', text: err.response?.data?.error || 'Erreur serveur.' });
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
   const handleRemove = async (name) => {
     if (!window.confirm(`Désactiver la base ${name} ?`)) return;
