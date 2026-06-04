@@ -311,7 +311,7 @@ export default function GestionBases() {
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-[#f0f0f0]">
-                    {['Nom SQL', 'Statut', 'Action'].map((h, i) => (
+                    {['Nom de la base ', 'Statut', 'Action'].map((h, i) => (
                       <th key={h} className={`px-4 py-3 bg-[#f8f8f8] text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-[#888888] ${i === 2 ? 'text-center' : 'text-left'}`}>
                         {h}
                       </th>
