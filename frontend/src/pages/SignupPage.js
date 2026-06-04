@@ -141,8 +141,8 @@ function SignupPage() {
 
             {/* Role hint */}
             <div className="mt-5 text-center">
-              <p className="text-[0.5rem] text-[#aaaaaa]">
-                <Shield size={8} className="inline mr-1" />
+              <p className="text-[0.54rem] text-[#aaaaaa]">
+                <Shield size={12} className="inline mr-1" />
                 Inscription réservée aux sociétés
               </p>
             </div>

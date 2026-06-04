@@ -278,10 +278,10 @@ function LoginPage() {
 
             {/* Role hint */}
             <div className="mt-5 text-center">
-              <p className="text-[0.5rem] text-[#aaaaaa]">
-                <Shield size={8} className="inline mr-1" />
+              <p className="text-[0.54rem] text-[#aaaaaa]">
+                <Shield size={12} className="inline mr-1" />
                 Administrateur : accès complet · 
-                <Building2 size={8} className="inline mx-1" />
+                <Building2 size={12} className="inline mx-1" />
                 Société : accès limité à sa base
               </p>
             </div>
