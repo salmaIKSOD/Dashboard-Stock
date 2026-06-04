@@ -32,7 +32,13 @@ const server = app.listen(PORT, () => {
 
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
-    console.error(`❌ Port ${PORT} déjà occupé — tue le process avec: taskkill /F /IM node.exe`);
-    process.exit(1);
+    console.log(`⚠️ Port ${PORT} occupé, tentative de libération...`);
+    const { execSync } = require('child_process');
+    try {
+      execSync(`for /f "tokens=5" %a in ('netstat -ano ^| findstr :${PORT}') do taskkill /F /PID %a`, { shell: 'cmd.exe' });
+      console.log('✅ Port libéré, redémarrage...');
+    } catch(e) {
+      console.error('❌ Impossible de libérer le port, lance CMD en administrateur');
+    }
   }
 });
