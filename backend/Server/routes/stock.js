@@ -106,6 +106,29 @@ router.delete('/bases/:name', async (req, res) => {
   }
 });
 
+// ── GET /api/bases/disponibles — bases SQL non encore ajoutées ──
+router.get('/bases/disponibles', async (req, res) => {
+  try {
+    const pool   = await getPool();
+    const result = await pool.request().query(`
+      SELECT name AS BaseName
+      FROM sys.databases
+      WHERE name NOT IN (
+        -- Exclure seulement les bases ACTIVES
+        SELECT BaseName FROM Test.stock.SAGE_Bases WHERE IsActive = 1
+      )
+      AND name NOT IN ('master', 'tempdb', 'model', 'msdb', 'Test')
+      AND state_desc = 'ONLINE'
+      AND name NOT LIKE 'snapshot_%'
+      ORDER BY name
+    `);
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('[GET /bases/disponibles]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── GET /api/filtres ──────────────────────────────────────────
 router.get('/filtres', async (req, res) => {
   const { base, cl_no1, fa_codefamille } = req.query;

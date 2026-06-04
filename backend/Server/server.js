@@ -23,6 +23,16 @@ app.get('/', (req, res) => {
 const predictionsRouter = require("./routes/predictions");
 app.use("/api/predictions", predictionsRouter);
 
-app.listen(PORT, () => {
+// app.listen(PORT, () => {
+//   console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
+// });
+const server = app.listen(PORT, () => {
   console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${PORT} déjà occupé — tue le process avec: taskkill /F /IM node.exe`);
+    process.exit(1);
+  }
 });
