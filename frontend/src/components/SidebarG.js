@@ -4,14 +4,14 @@ import { Database, UserCircle2, Settings, ChevronRight, ArrowLeft } from 'lucide
 import logo from '../images/logo.png';
 
 const NAV_ITEMS = [
-  { label: 'Gestion des bases', path: '/gestion-bases', icon: Database     },
-  { label: 'Mon profil',        path: '/profil',        icon: UserCircle2  },
-  { label: 'Paramètres',        path: '/parametres',    icon: Settings     },
+  { label: 'Gestion des bases', path: '/gestion-bases', icon: Database    },
+  { label: 'Mon profil',        path: '/profil',        icon: UserCircle2 },
+  { label: 'Paramètres',        path: '/parametres',    icon: Settings    },
 ];
 
 export default function SidebarG({ open, onClose }) {
-  const navigate  = useNavigate();
-  const location  = useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleNav = (path) => {
     navigate(path);
@@ -26,20 +26,6 @@ export default function SidebarG({ open, onClose }) {
       {/* Logo */}
       <div className="flex flex-col items-center gap-1 px-6 py-5 shrink-0" style={{ borderBottom: '1px solid #f0f0f0' }}>
         <img src={logo} alt="StockAnalytics" className="w-50 h-50 object-contain" />
-      </div>
-
-      {/* Retour dashboard */}
-      <div className="px-3 pt-3">
-        <button
-          onClick={() => navigate('/')}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-150"
-          style={{ background: 'rgba(18,166,224,0.06)', color: '#12a6e0', border: 'none', cursor: 'pointer' }}
-          onMouseEnter={e => e.currentTarget.style.background = 'rgba(18,166,224,0.12)'}
-          onMouseLeave={e => e.currentTarget.style.background = 'rgba(18,166,224,0.06)'}
-        >
-          <ArrowLeft size={14} />
-          <span className="text-xs font-medium">Retour au dashboard</span>
-        </button>
       </div>
 
       {/* Navigation */}
@@ -76,6 +62,20 @@ export default function SidebarG({ open, onClose }) {
           })}
         </ul>
       </nav>
+
+      {/* ← Retour dashboard — en bas avant le footer */}
+      <div className="px-3 pb-3" style={{ borderTop: '1px solid #f0f0f0', paddingTop: '0.75rem' }}>
+        <button
+          onClick={() => navigate('/')}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-150"
+          style={{ background: 'rgba(18,166,224,0.06)', color: '#12a6e0', border: 'none', cursor: 'pointer' }}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(18,166,224,0.12)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'rgba(18,166,224,0.06)'}
+        >
+          <ArrowLeft size={14} />
+          <span className="text-xs font-medium">Retour au dashboard</span>
+        </button>
+      </div>
 
       {/* Footer */}
       <div className="px-5 py-4 shrink-0" style={{ borderTop: '1px solid #f0f0f0' }}>
