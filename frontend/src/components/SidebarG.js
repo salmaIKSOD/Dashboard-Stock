@@ -73,7 +73,7 @@ export default function SidebarG({ open, onClose }) {
           onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 2px 8px rgba(18,166,224,0.30)'; e.currentTarget.style.transform = 'translateY(0)'; }}
         >
           <ArrowLeft size={16} style={{ flexShrink: 0 }} />
-          <span className="flex-1 text-left">Retour au dashboard</span>
+          <span className="flex-1 text-left">Retour au Dashboard</span>
         </button>
       </div>
 
