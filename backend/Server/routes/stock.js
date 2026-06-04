@@ -1,5 +1,3 @@
-// //  l'encien V3 avec base StockAnalytics //////////////////////////////////////////////////////////////////
-
 const express = require('express');
 const router  = express.Router();
 const { getPool, sql } = require('../../db');
@@ -7,9 +5,9 @@ const { getPool, sql } = require('../../db');
 // ── Cache mémoire (TTL différencié par endpoint) ──────────────
 const cache = new Map();
 const TTL = {
-  bases:    30 * 60 * 1000,   // 30 min — changent rarement
-  filtres:  30 * 60 * 1000,   // 30 min — servis depuis le cache SQL
-  mouvements: 2 * 60 * 1000,  // 2 min  — données temps réel
+  bases:    30 * 60 * 1000,
+  filtres:  30 * 60 * 1000,
+  mouvements: 2 * 60 * 1000,
 };
 
 function getCached(key) {
@@ -24,17 +22,13 @@ function setCached(key, data) {
 }
 
 // ── Préchargement au démarrage ────────────────────────────────
-// Evite la première requête lente après redémarrage du serveur
 async function warmupCache() {
   try {
     const pool = await getPool();
-
-    // Bases
     const bases = await pool.request().execute('stock.SP_GetBases');
     setCached('bases', bases.recordset);
     console.log(`[warmup] bases chargées (${bases.recordset.length})`);
 
-    // Filtres de chaque base active
     for (const b of bases.recordset) {
       const cacheKey = `filtres:${b.BaseName}:null:null`;
       const req = pool.request();
@@ -50,21 +44,97 @@ async function warmupCache() {
     console.warn('[warmup] échec (non bloquant):', err.message);
   }
 }
-
-// Lancer le warmup 2 secondes après le démarrage du module
 setTimeout(warmupCache, 2000);
 
 // ── GET /api/bases ────────────────────────────────────────────
 router.get('/bases', async (req, res) => {
-  const cached = getCached('bases');
-  if (cached) return res.json(cached);
+  const force = req.query.force === '1';
+  if (!force) {
+    const cached = getCached('bases');
+    if (cached) return res.json(cached);
+  }
   try {
     const pool   = await getPool();
     const result = await pool.request().execute('stock.SP_GetBases');
     setCached('bases', result.recordset);
     res.json(result.recordset);
   } catch (err) {
-    console.error('[/bases]', err.message);
+    console.error('[GET /bases]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/bases — ajouter une base ────────────────────────
+// router.post('/bases', async (req, res) => {
+//   const { baseName, baseLabel } = req.body;
+//   if (!baseName) return res.status(400).json({ error: 'Paramètre baseName requis' });
+//   try {
+//     const pool   = await getPool();
+//     const result = await pool.request()
+//       .input('BaseName',  sql.NVarChar(128), baseName)
+//       .input('BaseLabel', sql.NVarChar(255), baseLabel || baseName)
+//       .execute('stock.SP_AddBase');
+//     // Invalider le cache bases
+//     cache.delete('bases');
+//     setTimeout(warmupCache, 500);
+//     res.json(result.recordset[0]); // { Statut, Base, Message }
+//   } catch (err) {
+//     console.error('[POST /bases]', err.message);
+//     res.status(500).json({ error: err.message });
+//   }
+// });
+router.post('/bases', async (req, res) => {
+  const { baseName, baseLabel } = req.body;
+  if (!baseName) return res.status(400).json({ error: 'Paramètre baseName requis' });
+  try {
+    const pool   = await getPool();
+    const result = await pool.request()
+      .input('BaseName',  sql.NVarChar(128), baseName)
+      .input('BaseLabel', sql.NVarChar(255), baseLabel || baseName)
+      .execute('stock.SP_AddBase');
+
+    // ✅ Vider TOUT le cache (bases + tous les filtres)
+    cache.clear();
+    // Relancer le warmup après que SP_AddBase ait fini
+    setTimeout(warmupCache, 3000);
+
+    res.json(result.recordset[0]);
+  } catch (err) {
+    console.error('[POST /bases]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── DELETE /api/bases/:name — désactiver une base ─────────────
+// router.delete('/bases/:name', async (req, res) => {
+//   try {
+//     const pool   = await getPool();
+//     const result = await pool.request()
+//       .input('BaseName', sql.NVarChar(128), req.params.name)
+//       .execute('stock.SP_RemoveBase');
+//     // Invalider le cache
+//     cache.delete('bases');
+//     setTimeout(warmupCache, 500);
+//     res.json(result.recordset[0]);
+//   } catch (err) {
+//     console.error('[DELETE /bases/:name]', err.message);
+//     res.status(500).json({ error: err.message });
+//   }
+// });
+router.delete('/bases/:name', async (req, res) => {
+  try {
+    const pool   = await getPool();
+    const result = await pool.request()
+      .input('BaseName', sql.NVarChar(128), req.params.name)
+      .execute('stock.SP_RemoveBase');
+
+    // ✅ Vider TOUT le cache
+    cache.clear();
+    setTimeout(warmupCache, 3000);
+
+    res.json(result.recordset[0]);
+  } catch (err) {
+    console.error('[DELETE /bases/:name]', err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -79,11 +149,9 @@ router.get('/filtres', async (req, res) => {
     console.log(`[/filtres] cache hit — ${cacheKey}`);
     return res.json(cached);
   }
-
   try {
     const pool    = await getPool();
     const request = pool.request();
-    // Timeout court car SP_GetFiltres v2 lit le cache SQL (rapide)
     request.timeout = 15000;
     request.input('Base',           sql.NVarChar(128), base);
     request.input('CL_No1',         sql.Int,           cl_no1         ? parseInt(cl_no1) : null);
@@ -111,7 +179,6 @@ router.get('/mouvements', async (req, res) => {
   } = req.query;
   if (!base) return res.status(400).json({ error: 'Paramètre base requis' });
 
-  // Clé de cache pour les mouvements (TTL court = 2 min)
   const cacheKey = `mouvements:${JSON.stringify(req.query)}`;
   const cached = getCached(cacheKey);
   if (cached) return res.json(cached);
@@ -182,7 +249,6 @@ router.delete('/cache', async (req, res) => {
   const size = cache.size;
   cache.clear();
   console.log(`[/cache] ${size} entrées supprimées`);
-  // Optionnel : relancer aussi le cache SQL
   try {
     const pool = await getPool();
     await pool.request().execute('stock.SP_RefreshCacheFiltres');
@@ -190,52 +256,8 @@ router.delete('/cache', async (req, res) => {
   } catch (err) {
     console.warn('[/cache] Refresh SQL échoué:', err.message);
   }
-  // Re-warmup
   setTimeout(warmupCache, 500);
   res.json({ message: `Cache vidé (${size} entrées) et rechargé` });
-});
-
-
-
-
-//  partie gestion des base des données 
-// GET /api/bases — liste des bases
-router.get('/bases', async (req, res) => {
-  try {
-    const pool = await getPool();
-    const result = await pool.request().execute('stock.SP_GetBases');
-    res.json(result.recordset);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// POST /api/bases — ajouter une base
-router.post('/bases', async (req, res) => {
-  const { baseName, baseLabel } = req.body;
-  try {
-    const pool = await getPool();
-    const result = await pool.request()
-      .input('BaseName',  sql.NVarChar(128), baseName)
-      .input('BaseLabel', sql.NVarChar(255), baseLabel)
-      .execute('stock.SP_AddBase');
-    res.json(result.recordset[0]); // { Statut, Base, Message }
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// DELETE /api/bases/:name — désactiver une base
-router.delete('/bases/:name', async (req, res) => {
-  try {
-    const pool = await getPool();
-    const result = await pool.request()
-      .input('BaseName', sql.NVarChar(128), req.params.name)
-      .execute('stock.SP_RemoveBase');
-    res.json(result.recordset[0]);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
 });
 
 module.exports = router;

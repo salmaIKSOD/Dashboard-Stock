@@ -8,8 +8,8 @@ const PORT = 5000;
 
 app.use(cors({
   origin: 'http://localhost:3000',
-  methods: ['GET', 'POST'],
-  allowedHeaders: ['Content-Type'],
+  methods: ['GET', 'POST','DELETE', 'PUT', 'OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization'],
 }));
 app.use(express.json());
 

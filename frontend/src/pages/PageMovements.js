@@ -61,9 +61,11 @@ function useBreakpoint() {
 // ── Select avec portal ────────────────────────────────────────
 function Select({ label, icon: Icon, value, onChange, options, placeholder, disabled, loading }) {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
   const [dropdownStyle, setDropdownStyle] = useState({ top: 0, left: 0, width: 0 });
   const buttonRef   = useRef(null);
   const dropdownRef = useRef(null);
+  const inputRef    = useRef(null);
 
   const updatePos = () => {
     if (buttonRef.current) {
@@ -81,22 +83,28 @@ function Select({ label, icon: Icon, value, onChange, options, placeholder, disa
       if (buttonRef.current   && buttonRef.current.contains(e.target))   return;
       if (dropdownRef.current && dropdownRef.current.contains(e.target)) return;
       setOpen(false);
+      setSearch('');
     };
     if (open) {
       updatePos();
       document.addEventListener('mousedown', handler);
-      window.addEventListener('scroll',  updatePos);
-      window.addEventListener('resize',  updatePos);
+      window.addEventListener('scroll', updatePos);
+      window.addEventListener('resize', updatePos);
+      setTimeout(() => inputRef.current?.focus(), 50);
     }
     return () => {
       document.removeEventListener('mousedown', handler);
-      window.removeEventListener('scroll',  updatePos);
-      window.removeEventListener('resize',  updatePos);
+      window.removeEventListener('scroll', updatePos);
+      window.removeEventListener('resize', updatePos);
     };
   }, [open]);
 
   const selected   = options.find(o => String(o.value) === String(value));
   const isDisabled = disabled || loading;
+
+  const filtered = search.trim()
+    ? options.filter(o => o.label.toLowerCase().startsWith(search.toLowerCase()))
+    : options;
 
   return (
     <div className="flex flex-col gap-[6px]">
@@ -130,29 +138,54 @@ function Select({ label, icon: Icon, value, onChange, options, placeholder, disa
           <div
             ref={dropdownRef}
             style={{ position: 'absolute', top: dropdownStyle.top, left: dropdownStyle.left, width: dropdownStyle.width, maxWidth: '500px' }}
-            className="bg-white border border-[#cce8f6] rounded-[0.65rem] shadow-[0_8px_28px_rgba(18,166,224,0.2),0_4px_12px_rgba(0,0,0,0.15)] z-[99999] max-h-[260px] overflow-y-auto"
+            className="bg-white border border-[#cce8f6] rounded-[0.65rem] shadow-[0_8px_28px_rgba(18,166,224,0.2),0_4px_12px_rgba(0,0,0,0.15)] z-[99999]"
           >
-            <div
-              onClick={() => { onChange(''); setOpen(false); }}
-              className={`px-4 py-2 text-[13px] cursor-pointer flex items-center justify-between gap-4 border-b border-[#eef6fb] ${!value ? 'bg-[rgba(18,166,224,0.05)]' : 'hover:bg-[#f2faff]'}`}
-            >
-              <span className="italic text-[#999999]">{placeholder}</span>
-              {!value && <Check size={13} className="text-[#12a6e0] flex-shrink-0" />}
-            </div>
-            {options.map(o => (
-              <div
-                key={o.value}
-                onClick={() => { onChange(o.value); setOpen(false); }}
-                className={`px-4 py-2 text-[13px] cursor-pointer flex items-center justify-between gap-4 border-b border-[#f5f9fc] transition-colors
-                  ${String(value) === String(o.value) ? 'bg-[rgba(18,166,224,0.07)] text-[#0d8fc4] font-semibold' : 'text-[#1a1a1a] hover:bg-[#f2faff]'}`}
-              >
-                <span className="flex-1 truncate">{o.label}</span>
-                {String(value) === String(o.value) && <Check size={13} className="text-[#12a6e0] flex-shrink-0" />}
+            {/* Recherche */}
+            <div className="px-3 py-2 border-b border-[#eef6fb]">
+              <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-[#d8d8d8] bg-[#fafafa] focus-within:border-[#12a6e0] focus-within:shadow-[0_0_0_3px_rgba(18,166,224,0.10)] transition-all">
+                <Search size={11} className="text-[#c5c5c5] flex-shrink-0" />
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Rechercher…"
+                  className="flex-1 text-[12px] outline-none bg-transparent text-[#0d0c0c] placeholder-[#c5c5c5]"
+                />
+                {search && (
+                  <button onClick={() => setSearch('')} className="text-[#c5c5c5] hover:text-[#888] cursor-pointer">
+                    <X size={11} />
+                  </button>
+                )}
               </div>
-            ))}
-            {options.length === 0 && (
-              <div className="py-4 text-[13px] text-[#c5c5c5] text-center">Aucune option disponible</div>
-            )}
+            </div>
+
+            {/* Liste */}
+            <div className="max-h-[220px] overflow-y-auto">
+              <div
+                onClick={() => { onChange(''); setOpen(false); setSearch(''); }}
+                className={`px-4 py-2 text-[13px] cursor-pointer flex items-center justify-between gap-4 border-b border-[#eef6fb] ${!value ? 'bg-[rgba(18,166,224,0.05)]' : 'hover:bg-[#f2faff]'}`}
+              >
+                <span className="italic text-[#999999]">{placeholder}</span>
+                {!value && <Check size={13} className="text-[#12a6e0] flex-shrink-0" />}
+              </div>
+
+              {filtered.map(o => (
+                <div
+                  key={o.value}
+                  onClick={() => { onChange(o.value); setOpen(false); setSearch(''); }}
+                  className={`px-4 py-2 text-[13px] cursor-pointer flex items-center justify-between gap-4 border-b border-[#f5f9fc] transition-colors
+                    ${String(value) === String(o.value) ? 'bg-[rgba(18,166,224,0.07)] text-[#0d8fc4] font-semibold' : 'text-[#1a1a1a] hover:bg-[#f2faff]'}`}
+                >
+                  <span className="flex-1 truncate">{o.label}</span>
+                  {String(value) === String(o.value) && <Check size={13} className="text-[#12a6e0] flex-shrink-0" />}
+                </div>
+              ))}
+
+              {filtered.length === 0 && (
+                <div className="py-4 text-[13px] text-[#c5c5c5] text-center">Aucun résultat</div>
+              )}
+            </div>
           </div>,
           document.body
         )}
@@ -160,7 +193,6 @@ function Select({ label, icon: Icon, value, onChange, options, placeholder, disa
     </div>
   );
 }
-
 // ── DateInputInline ───────────────────────────────────────────
 function DateInputInline({ label, value, onChange, min, max }) {
   const [focused, setFocused] = useState(false);

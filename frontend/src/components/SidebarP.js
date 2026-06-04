@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import {useNavigate , useLocation } from 'react-router-dom';
 import {
   Menu, X, Bell, UserCircle2,
   LayoutDashboard, PackageSearch, ArrowDownUp,
@@ -35,6 +35,8 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
 
   const notifRef = useRef(null);
   const userRef  = useRef(null);
+
+  const navigate = useNavigate();
 
   // Fermer les dropdowns au clic en dehors
   useEffect(() => {
@@ -205,6 +207,7 @@ export default function SidebarP({ sidebarOpen, onToggleSidebar }) {
                 {/* Gestion de bases */}
                 <button
                   style={menuItemStyle}
+                  onClick={() => { navigate('/gestion-bases'); setUserOpen(false); }}
                   onMouseEnter={e => { e.currentTarget.style.background = '#f5f5f5'; e.currentTarget.style.color = '#0d0c0c'; }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'none';    e.currentTarget.style.color = '#555555'; }}
                 >
