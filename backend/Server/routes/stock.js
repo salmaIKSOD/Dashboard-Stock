@@ -107,14 +107,16 @@ router.delete('/bases/:name', async (req, res) => {
 });
 
 // ── GET /api/bases/disponibles — bases SQL non encore ajoutées ──
+// ── GET /api/bases/disponibles — bases SQL non encore ajoutées ──
 router.get('/bases/disponibles', async (req, res) => {
   try {
-    const pool   = await getPool();
-    const result = await pool.request().query(`
+    const pool = await getPool();
+
+    // 1. Récupérer toutes les bases candidates
+    const basesResult = await pool.request().query(`
       SELECT name AS BaseName
       FROM sys.databases
       WHERE name NOT IN (
-        -- Exclure seulement les bases ACTIVES
         SELECT BaseName FROM Test.stock.SAGE_Bases WHERE IsActive = 1
       )
       AND name NOT IN ('master', 'tempdb', 'model', 'msdb', 'Test')
@@ -122,7 +124,26 @@ router.get('/bases/disponibles', async (req, res) => {
       AND name NOT LIKE 'snapshot_%'
       ORDER BY name
     `);
-    res.json(result.recordset);
+
+    // 2. Filtrer celles qui ont P_DOSSIER
+    const basesValides = [];
+    for (const row of basesResult.recordset) {
+      try {
+        const check = await pool.request().query(`
+          SELECT COUNT(*) AS nb 
+          FROM [${row.BaseName}].sys.tables 
+          WHERE name = 'P_DOSSIER'
+        `);
+        if (check.recordset[0].nb > 0) {
+          basesValides.push(row);
+        }
+      } catch (e) {
+        // Base inaccessible → on l'ignore silencieusement
+        console.warn(`[bases/disponibles] ${row.BaseName} inaccessible:`, e.message);
+      }
+    }
+
+    res.json(basesValides);
   } catch (err) {
     console.error('[GET /bases/disponibles]', err.message);
     res.status(500).json({ error: err.message });
