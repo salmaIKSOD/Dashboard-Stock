@@ -175,11 +175,9 @@ export default function StockTable({ data, loading, dateDebut, dateFin }) {
         </div>
         <button
           onClick={() => exportExcel(sorted, cols, dateDebut, dateFin)}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-[12px] font-semibold bg-[#f0fdf4] text-[#15803d] border border-[rgba(21,128,61,0.10)] cursor-pointer transition-all duration-150 hover:bg-[#dcfce7] hover:shadow-[0_1px_6px_rgba(21,128,61,0.18)] active:scale-[0.97]"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-[12px] font-semibold bg-[#f0fdf4] text-[#15803d] border border-[rgba(21,128,61,0.25)] cursor-pointer transition-all duration-150 hover:bg-[#dcfce7] hover:shadow-[0_1px_6px_rgba(21,128,61,0.18)] active:scale-[0.97]"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <rect x="3" y="3" width="18" height="18" rx="2" fill="#15803d" opacity="0.12"/>
-            <path d="M8 10l2.5 4 1.5-2.5L14 14" stroke="#15803d" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
             <path d="M12 16l-5-5h3V4h4v7h3l-5 5z" fill="#15803d"/>
             <path d="M5 20h14" stroke="#15803d" strokeWidth="2" strokeLinecap="round"/>
           </svg>
