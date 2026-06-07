@@ -14,7 +14,9 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 
-const API = 'http://localhost:5000';
+const API = window.location.port === '3000' 
+  ? 'http://localhost:5000' 
+  : '';
 
 // ── Boîte de confirmation custom ─────────────────────────────
 function ConfirmDialog({ baseName, onConfirm, onCancel }) {

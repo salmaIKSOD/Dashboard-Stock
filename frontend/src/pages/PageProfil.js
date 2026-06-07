@@ -23,7 +23,8 @@ export default function PageProfil() {
   const initials = `${form.prenom[0] ?? ''}${form.nom[0] ?? ''}`.toUpperCase();
 
   return (
-    <div style={{ maxWidth: 720, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    // <div style={{ maxWidth: 720, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
       {/* ── Bannière profil ── */}
       <div className="bg-white rounded-2xl p-6 flex items-center gap-5"
