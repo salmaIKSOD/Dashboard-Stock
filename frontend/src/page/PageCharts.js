@@ -588,23 +588,49 @@ function G3({ data, loading }) {
   const rows = useMemo(() => {
     if (!data?.length) return [];
     const find = mkFind(Object.keys(data[0]));
-    const kC = find('CatN1', 'Cat N1', 'CL_Intitule1', 'clintitule1');
-    const kE = find('Total Entrees', 'TotalEntrees', 'TotalEntree');
-    const kS = find('Total Sorties', 'TotalSorties', 'TotalSortie');
-    // Pour stock et valeur on garde la vue SP_GetMouvements qui inclut StockFinal et ValeurFinalePermanente
-    const kV = find('Valeur Finale Permanente', 'ValeurFinalePermanente', 'Valeur Finale (Permanente)', 'ValeurFinale', 'Solde');
-    const kF = find('Stock Final', 'StockFinal');
-    const map = {};
+    const kC  = find('CatN1', 'Cat N1', 'CL_Intitule1', 'clintitule1');
+    const kE  = find('Total Entrees', 'TotalEntrees', 'TotalEntree');
+    const kS  = find('Total Sorties', 'TotalSorties', 'TotalSortie');
+    const kV  = find('Valeur Finale (Permanente)', 'ValeurFinalePermanente', 'Valeur Finale Permanente', 'ValeurFinale', 'Solde');
+    const kF  = find('Stock Final', 'StockFinal');
+    const kD  = find('Date', 'DateJour');
+    const kA  = find('Article', 'AR_Ref');
+    const kDp = find('Depot', 'DE_No');
+
+    const lastByKey = {};
+
+    for (const r of data) {
+      const d   = toISODate(r[kD]);
+      if (!d) continue;
+      const art = String(r[kA]  ?? '');
+      const dep = String(r[kDp] ?? '');
+      const key = `${art}|||${dep}`;
+      const cat = r[kC] || 'Sans catalogue';
+      const v   = toNum(r[kV]);
+      const sf  = toNum(r[kF]);
+
+      if (!lastByKey[key] || d > lastByKey[key].date) {
+        lastByKey[key] = { cat, stock: sf, valeur: v, date: d };
+      }
+    }
+
+    const catMap = {};
+
+    for (const entry of Object.values(lastByKey)) {
+      const cat = entry.cat;
+      if (!catMap[cat]) catMap[cat] = { name: cat, entrees: 0, sorties: 0, stock: 0, valeur: 0 };
+      catMap[cat].stock  += entry.stock;
+      catMap[cat].valeur += entry.valeur;
+    }
+
     for (const r of data) {
       const cat = r[kC] || 'Sans catalogue';
-      if (!map[cat]) map[cat] = { name:cat, entrees:0, sorties:0, stock:0, valeur:0 };
-      map[cat].entrees += toNum(r[kE]);
-      map[cat].sorties += toNum(r[kS]);
-      // StockFinal et ValeurFinale : on prend le max par article/dépôt/jour pour éviter la somme cumulative
-      map[cat].stock   += toNum(r[kF]);
-      map[cat].valeur  += toNum(r[kV]);
+      if (!catMap[cat]) catMap[cat] = { name: cat, entrees: 0, sorties: 0, stock: 0, valeur: 0 };
+      catMap[cat].entrees += toNum(r[kE]);
+      catMap[cat].sorties += toNum(r[kS]);
     }
-    return Object.values(map)
+
+    return Object.values(catMap)
       .sort((a, b) => b[mode] - a[mode])
       .filter(c => c[mode] > 0);
   }, [data, mode]);
@@ -631,7 +657,6 @@ function G3({ data, loading }) {
       </div>
 
       <div style={{ display:'flex', flexDirection:'column', alignItems:'center' }}>
-      {/* Donut — taille fixe 200×200, pas de % pour éviter width=-1 */}
         <div style={{ position:'relative', width:200, height:200, flexShrink:0 }}>
           <ResponsiveContainer width={200} height={200}>
             <PieChart>
@@ -739,60 +764,91 @@ function G4({ data, loading }) {
     if (!data?.length) return empty;
 
     const find = mkFind(Object.keys(data[0]));
-    const kD = find('Date', 'DateJour');
-    const kV = find('Valeur Finale (Permanente)', 'ValeurFinalePermanente', 'Valeur Finale Permanente', 'ValeurFinale', 'Solde');
-    const kF = find('Stock Final', 'StockFinal');
-    const kE = find('Total Entrees', 'TotalEntrees', 'TotalEntree');
-    const kS = find('Total Sorties', 'TotalSorties', 'TotalSortie');
-    const kA = find('Article', 'AR_Ref');
+    const kD  = find('Date', 'DateJour');
+    const kV  = find('Valeur Finale (Permanente)', 'ValeurFinalePermanente', 'Valeur Finale Permanente', 'ValeurFinale', 'Solde');
+    const kF  = find('Stock Final', 'StockFinal');
+    const kE  = find('Total Entrees', 'TotalEntrees', 'TotalEntree');
+    const kS  = find('Total Sorties', 'TotalSorties', 'TotalSortie');
+    const kA  = find('Article', 'AR_Ref');
     const kDp = find('Depot', 'DE_No');
 
-    // ── FIX : pour chaque (article, dépôt, jour), on garde la valeur telle quelle.
-    //    Pour le total par jour, on agrège en sommant une seule fois par (art, dépôt).
-    //    SP_GetStockJournalier retourne déjà 1 ligne par (art, dépôt, jour) → somme directe.
-    const dayMap   = {};
-    const moisMap  = {};
+    // ✅ 1 entrée par (article, dépôt, jour) → stocker directement
+    const lastByKeyByDay = {};
 
+    for (const r of data) {
+      const d   = toISODate(r[kD]);
+      if (!d) continue;
+      const art = String(r[kA]  ?? '');
+      const dep = String(r[kDp] ?? '');
+      const key = `${art}|||${dep}`;
+
+      if (!lastByKeyByDay[key]) lastByKeyByDay[key] = {};
+      lastByKeyByDay[key][d] = {
+        valeur: toNum(r[kV]),
+        stock:  toNum(r[kF]),
+      };
+    }
+
+    // ── Courbe journalière
+    const dayMap = {};
+    for (const dayData of Object.values(lastByKeyByDay)) {
+      for (const [d, vals] of Object.entries(dayData)) {
+        if (!dayMap[d]) dayMap[d] = { d, valeur: 0, stock: 0 };
+        dayMap[d].valeur += vals.valeur;
+        dayMap[d].stock  += vals.stock;
+      }
+    }
+
+    // ── Entrées/sorties mensuelles
+    const moisEntreesSorties = {};
     for (const r of data) {
       const d    = toISODate(r[kD]);
       if (!d) continue;
       const mois = d.slice(0, 7);
-
-      const v  = toNum(r[kV]);
-      const sf = toNum(r[kF]);
-      const e  = toNum(r[kE]);
-      const s  = toNum(r[kS]);
-
-      if (!dayMap[d]) dayMap[d] = { d, valeur: 0, stock: 0 };
-      dayMap[d].valeur += v;
-      dayMap[d].stock  += sf;
-
-      if (!moisMap[mois]) moisMap[mois] = { mois, entrees: 0, sorties: 0, valeur: 0 };
-      // Pour les mouvements mensuels on ne compte que les jours avec mouvements réels
+      const e    = toNum(r[kE]);
+      const s    = toNum(r[kS]);
+      if (!moisEntreesSorties[mois]) moisEntreesSorties[mois] = { entrees: 0, sorties: 0 };
       if (e > 0 || s > 0) {
-        moisMap[mois].entrees += e;
-        moisMap[mois].sorties += s;
+        moisEntreesSorties[mois].entrees += e;
+        moisEntreesSorties[mois].sorties += s;
       }
-      moisMap[mois].valeur = Math.max(moisMap[mois].valeur, v); // valeur de fin de mois
     }
 
-    const sorted   = Object.values(dayMap).sort((a, b) => a.d.localeCompare(b.d));
-    const step     = Math.max(1, Math.floor(sorted.length / 60));
-    const allVals  = sorted.map(r => r.valeur).filter(v => v > 0);
+    // ✅ Valeur fin de mois = dernier jour du mois dans dayMap
+    const moisValeur = {};
+    for (const [d, vals] of Object.entries(dayMap)) {
+      const mois = d.slice(0, 7);
+      if (!moisValeur[mois] || d > moisValeur[mois].date) {
+        moisValeur[mois] = { date: d, valeur: vals.valeur };
+      }
+    }
 
-    const moisSorted = Object.values(moisMap).sort((a, b) => a.mois.localeCompare(b.mois));
+    const allMois = new Set([
+      ...Object.keys(moisEntreesSorties),
+      ...Object.keys(moisValeur),
+    ]);
     const noms = ['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
-    const moisFmt = moisSorted.map(r => {
-      const [y, m] = r.mois.split('-');
-      return { ...r, label: `${noms[parseInt(m, 10) - 1]} ${y.slice(2)}` };
+    const moisSorted = [...allMois].sort().map(mois => {
+      const [y, m] = mois.split('-');
+      return {
+        mois,
+        label:   `${noms[parseInt(m, 10) - 1]} ${y.slice(2)}`,
+        entrees: moisEntreesSorties[mois]?.entrees ?? 0,
+        sorties: moisEntreesSorties[mois]?.sorties ?? 0,
+        valeur:  moisValeur[mois]?.valeur          ?? 0,
+      };
     });
+
+    const sorted  = Object.values(dayMap).sort((a, b) => a.d.localeCompare(b.d));
+    const step    = Math.max(1, Math.floor(sorted.length / 60));
+    const allVals = sorted.map(r => r.valeur).filter(v => v > 0);
 
     return {
       pts:            sorted.filter((_, i) => i % step === 0).map(r => ({ ...r, label: fmtDate(r.d) })),
-      parMois:        moisFmt,
-      dernierValeur:  toNum(sorted.at(-1)?.valeur ?? 0),
-      premiereValeur: toNum(sorted[0]?.valeur     ?? 0),
-      dernierStock:   toNum(sorted.at(-1)?.stock  ?? 0),
+      parMois:        moisSorted,
+      dernierValeur:  sorted.at(-1)?.valeur ?? 0,
+      premiereValeur: sorted[0]?.valeur     ?? 0,
+      dernierStock:   sorted.at(-1)?.stock  ?? 0,
       maxValeur:      allVals.length ? Math.max(...allVals) : 0,
       minValeur:      allVals.length ? Math.min(...allVals) : 0,
     };
@@ -808,7 +864,6 @@ function G4({ data, loading }) {
   return (
     <>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginBottom:20 }}>
-        {/* Valeur actuelle */}
         <div style={{
           background:`linear-gradient(135deg, ${C.blue}12, ${C.blue}04)`,
           border:`1px solid ${C.blue}25`, borderRadius:12, padding:'14px 16px', position:'relative', overflow:'hidden',
@@ -819,7 +874,6 @@ function G4({ data, loading }) {
           <p style={{ fontSize:10, color:C.textMuted, margin:0 }}>MAD — dernier jour</p>
         </div>
 
-        {/* Variation */}
         <div style={{
           background:`linear-gradient(135deg, ${up?C.green:C.red}12, ${up?C.green:C.red}04)`,
           border:`1px solid ${up?C.green:C.red}25`, borderRadius:12, padding:'14px 16px', position:'relative', overflow:'hidden',
@@ -833,7 +887,6 @@ function G4({ data, loading }) {
           <p style={{ fontSize:10, color:C.textMuted, margin:0 }}>{up?'+':''}{pctEvol.toFixed(1)}% sur la période</p>
         </div>
 
-        {/* Stock dernier jour */}
         <div style={{
           background:`linear-gradient(135deg, ${C.amber}12, ${C.amber}04)`,
           border:`1px solid ${C.amber}25`, borderRadius:12, padding:'14px 16px', position:'relative', overflow:'hidden',
@@ -846,7 +899,6 @@ function G4({ data, loading }) {
       </div>
 
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
-        {/* Courbe valeur permanente */}
         <div style={{ background:C.borderLight, border:`1px solid ${C.border}`, borderRadius:12, padding:'14px 12px 10px' }}>
           <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:4 }}>
             <Activity size={13} color={C.blue} />
@@ -876,7 +928,6 @@ function G4({ data, loading }) {
           </ResponsiveContainer>
         </div>
 
-        {/* Entrées / Sorties par mois */}
         <div style={{ background:C.borderLight, border:`1px solid ${C.border}`, borderRadius:12, padding:'14px 12px 10px' }}>
           <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:12 }}>
             <Wallet size={13} color={C.amber} />
