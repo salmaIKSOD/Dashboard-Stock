@@ -5,8 +5,8 @@ import logo from '../images/logo.png';
 
 const NAV_ITEMS = [
   { label: 'Gestion des bases', path: '/gestion-bases', icon: Database    },
-  { label: 'Mon profil',        path: '/profil',        icon: UserCircle2 },
-  { label: 'Gestion des comptes',        path: '/gestion-comptes',    icon: Users    },
+  // { label: 'Mon profil',        path: '/profil',        icon: UserCircle2 },
+  // { label: 'Gestion des comptes',        path: '/gestion-comptes',    icon: Users    },
 ];
 
 export default function SidebarG({ open, onClose }) {

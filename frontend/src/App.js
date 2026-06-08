@@ -550,7 +550,7 @@ export default function App() {
           {/* ← ajouter */}
           <Route path="/gestion-comptes" element={
             <AdminShell>
-              <GestionComptes />  {/* ou ton composant */}
+              <GestionComptes /> 
             </AdminShell>
           } />
 
