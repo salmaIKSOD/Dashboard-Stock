@@ -22,9 +22,47 @@ function setCached(key, data) {
 }
 
 // ── Préchargement au démarrage ────────────────────────────────
+// async function warmupCache() {
+//   try {
+//     const pool = await getPool();
+//     const bases = await pool.request().execute('stock.SP_GetBases');
+//     setCached('bases', bases.recordset);
+//     console.log(`[warmup] bases chargées (${bases.recordset.length})`);
+
+//     for (const b of bases.recordset) {
+//       const cacheKey = `filtres:${b.BaseName}:null:null`;
+//       const req = pool.request();
+//       req.input('Base',           sql.NVarChar(128), b.BaseName);
+//       req.input('CL_No1',         sql.Int,           null);
+//       req.input('FA_CodeFamille', sql.NVarChar(10),  null);
+//       const result = await req.execute('stock.SP_GetFiltres');
+//       const [articles, depots, familles, cat1, cat2, cat3, cat4] = result.recordsets;
+//       setCached(cacheKey, { articles, depots, familles, cat1, cat2, cat3, cat4 });
+//       console.log(`[warmup] filtres ${b.BaseName} préchargés`);
+//     }
+//   } catch (err) {
+//     console.warn('[warmup] échec (non bloquant):', err.message);
+//   }
+// }
+// setTimeout(warmupCache, 2000);
 async function warmupCache() {
   try {
     const pool = await getPool();
+
+    // ✅ Vérifie si le cache SQL est périmé (> 8h) et le rafraîchit si besoin
+    const refreshResult = await pool.request()
+      .input('HeuresMax', sql.Int, 8)
+      .execute('stock.SP_RefreshSiNecessaire');
+
+    const statut = refreshResult.recordset[0]?.Statut;
+    if (statut === 'REFRESHED') {
+      console.log('[warmup] Cache SQL rafraîchi automatiquement');
+    } else {
+      const age = refreshResult.recordset[0]?.AgeMinutes;
+      console.log(`[warmup] Cache SQL OK — âge: ${age} min`);
+    }
+
+    // Charger les bases en mémoire Node
     const bases = await pool.request().execute('stock.SP_GetBases');
     setCached('bases', bases.recordset);
     console.log(`[warmup] bases chargées (${bases.recordset.length})`);
@@ -44,7 +82,6 @@ async function warmupCache() {
     console.warn('[warmup] échec (non bloquant):', err.message);
   }
 }
-setTimeout(warmupCache, 2000);
 
 // ── GET /api/bases ────────────────────────────────────────────
 router.get('/bases', async (req, res) => {
@@ -269,6 +306,38 @@ router.delete('/cache', async (req, res) => {
   }
   setTimeout(warmupCache, 500);
   res.json({ message: `Cache vidé (${size} entrées) et rechargé` });
+});
+
+
+// ── GET /api/cache/status ─────────────────────────────────────
+router.get('/cache/status', async (req, res) => {
+  try {
+    const pool   = await getPool();
+    const result = await pool.request().query(`
+      SELECT
+        MAX(DateRefresh)                                  AS DernierRefresh,
+        DATEDIFF(MINUTE, MAX(DateRefresh), GETDATE())     AS AgeMinutes,
+        COUNT(*)                                          AS NbLignes
+      FROM stock.StockJournalierCache
+    `);
+    res.json(result.recordset[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/cache/refresh ───────────────────────────────────
+router.post('/cache/refresh', async (req, res) => {
+  try {
+    const pool = await getPool();
+    await pool.request().execute('stock.SP_RefreshCacheFiltres');
+    await pool.request().execute('stock.SP_RefreshStockCache');
+    cache.clear();
+    setTimeout(warmupCache, 500);
+    res.json({ message: 'Refresh complet lancé', date: new Date() });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;
