@@ -213,8 +213,16 @@ function Dashboard({ sidebarOpen }) {
 
  const handleFilter = async (params) => {
     if (!params) {
+      // const d = {
+      //   base: 'BIJOU',
+      //   dateDebut: defaultDebut,
+      //   dateFin:   defaultFin,
+      //   depot: null, article: null,
+      //   cl_no1: null, cl_no2: null, cl_no3: null, cl_no4: null,
+      //   fa_codefamille: null,
+      // };
       const d = {
-        base: 'BIJOU',
+        base: '',
         dateDebut: defaultDebut,
         dateFin:   defaultFin,
         depot: null, article: null,
