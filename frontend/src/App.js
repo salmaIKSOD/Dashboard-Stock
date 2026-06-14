@@ -9,6 +9,7 @@ import StockTable from './components/StockTable';
 // import { fetchStock } from './api/stockApi';
 import { fetchStock, fetchStockChunk, splitPeriodJS } from './api/stockApi';
 import InnerSidebar from './components/InnerSidebar';
+import EmptyStateDashboard, { saveToHistory } from './components/EmptyStateDashboard';
 
 import { DashboardProvider, useDashboard } from './context/DashboardContext';
 
@@ -225,6 +226,7 @@ function Dashboard({ sidebarOpen }) {
       setTableData(null);
       setLoadingChunks(null);
       return;
+      saveToHistory(params);
     }
 
     setHasFiltered(true);
@@ -478,6 +480,16 @@ function Dashboard({ sidebarOpen }) {
         initialFamille={currentFilters.fa_codefamille || ''}
         initialCat1={currentFilters.cl_no1 || ''}
       />
+
+      {/* ← ICI, juste après Filters */}
+      {/* {!hasFiltered && tableData === null && !loading && (
+        <EmptyStateDashboard onRelancer={handleFilter} />
+      )} */}
+      {!hasFiltered && tableData === null && !loading && (
+        <div className="mb-5">
+          <EmptyStateDashboard onRelancer={handleFilter} />
+        </div>
+      )}
 
       {error && (
         <div className="bg-[rgba(229,57,53,0.06)] border border-[rgba(229,57,53,0.20)] rounded-xl px-5 py-4 text-[#c62828] text-sm flex items-center gap-3">
