@@ -27,7 +27,6 @@ import PageCharts from './page/PageCharts';
 import PageTrends from './page/PageTrends';
 import PageDashboardReports from './page/PageDashboardReports';
 import PageFavorites from './page/PageFavorites';
-import AIPrevisions from './pages/AIPrevisions';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 
@@ -757,7 +756,6 @@ export default function App() {
             <Route path="/depots"           element={<PageDepots />}          />
             <Route path="/analyses"         element={<PageAnalyses />}        />
             <Route path="/alertes"          element={<PageAlertes />}         />
-            <Route path="/previsions"       element={<AIPrevisions />}        />
             <Route path="/rapports"         element={<PageRapports />}        />
             <Route path="/parametres"       element={<PageParametres />}      />
           </Routes>
@@ -795,7 +793,6 @@ export default function App() {
 // import PageTrends from './page/PageTrends';
 // import PageDashboardReports from './page/PageDashboardReports';
 // import PageFavorites from './page/PageFavorites';
-// import AIPrevisions from './pages/AIPrevisions';
 // import LoginPage from './pages/LoginPage';
 // import SignupPage from './pages/SignupPage';
 
@@ -1403,7 +1400,6 @@ export default function App() {
 //             <Route path="/depots"           element={<PageDepots />}          />
 //             <Route path="/analyses"         element={<PageAnalyses />}        />
 //             <Route path="/alertes"          element={<PageAlertes />}         />
-//             <Route path="/previsions"       element={<AIPrevisions />}        />
 //             <Route path="/rapports"         element={<PageRapports />}        />
 //             <Route path="/parametres"       element={<PageParametres />}      />
 //           </Routes>
