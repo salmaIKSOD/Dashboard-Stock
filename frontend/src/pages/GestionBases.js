@@ -121,41 +121,77 @@ export default function GestionBases() {
 
   const [syncing, setSyncing] = useState(false);
 
+  // const handleAdd = async () => {
+  //   if (!baseName) {
+  //     return setMessage({ type: 'error', text: 'Veuillez entrer le nom de la base.' });
+  //   }
+  //   setLoading(true);
+  //   setMessage(null);
+  //   try {
+  //     // ── Étape 1 : enregistrer la base (rapide)
+  //     const res = await axios.post(`${API}/api/bases`, {
+  //       baseName,
+  //       baseLabel: baseName,
+  //     });
+  //     setBaseName('');
+  //     fetchBases();
+  //     fetchBasesDisponibles();
+
+  //     // ── Étape 2 : lancer le refresh et attendre
+  //     setSyncing(true);
+  //     setMessage({ type: 'info', text: 'Synchronisation des données en cours…' });
+
+  //     // await axios.post(`${API}/api/cache/refresh`);
+  //     await axios.post(`${API}/api/cache/refresh`, {}, { timeout: 600000 });
+
+  //     setMessage({ type: 'success', text: 'Base ajoutée et données synchronisées.' });
+  //     setTimeout(() => setMessage(null), 3000);
+
+  //   } catch (err) {
+  //     setMessage({ type: 'error', text: err.response?.data?.error || 'Erreur serveur.' });
+  //     setTimeout(() => setMessage(null), 3000);
+  //   } finally {
+  //     setLoading(false);
+  //     setSyncing(false);
+  //   }
+  // };
+
   const handleAdd = async () => {
     if (!baseName) {
       return setMessage({ type: 'error', text: 'Veuillez entrer le nom de la base.' });
     }
+    const baseNameCopy = baseName;
     setLoading(true);
     setMessage(null);
     try {
-      // ── Étape 1 : enregistrer la base (rapide)
-      const res = await axios.post(`${API}/api/bases`, {
-        baseName,
-        baseLabel: baseName,
-      });
+      // Étape 1 : ajout rapide (enregistre + crée la vue SAGE + reconstruit vues unifiées)
+      await axios.post(`${API}/api/bases`, { baseName: baseNameCopy, baseLabel: baseNameCopy });
       setBaseName('');
       fetchBases();
       fetchBasesDisponibles();
+      setLoading(false);
 
-      // ── Étape 2 : lancer le refresh et attendre
+      // Étape 2 : refresh uniquement cette base (cache filtres + stock)
       setSyncing(true);
-      setMessage({ type: 'info', text: 'Synchronisation des données en cours…' });
+      setMessage({ type: 'info', text: `Synchronisation de ${baseNameCopy} en cours…` });
 
-      // await axios.post(`${API}/api/cache/refresh`);
-      await axios.post(`${API}/api/cache/refresh`, {}, { timeout: 600000 });
+      await axios.post(
+        `${API}/api/bases/refresh-one`,
+        { baseName: baseNameCopy },
+        { timeout: 600000 }
+      );
 
-      setMessage({ type: 'success', text: 'Base ajoutée et données synchronisées.' });
-      setTimeout(() => setMessage(null), 3000);
+      setMessage({ type: 'success', text: `Base ${baseNameCopy} ajoutée et synchronisée.` });
+      setTimeout(() => setMessage(null), 4000);
 
     } catch (err) {
       setMessage({ type: 'error', text: err.response?.data?.error || 'Erreur serveur.' });
-      setTimeout(() => setMessage(null), 3000);
+      setTimeout(() => setMessage(null), 4000);
     } finally {
       setLoading(false);
       setSyncing(false);
     }
   };
-
   const handleRemoveConfirmed = async () => {
     const name = confirmBase;
     setConfirmBase(null);

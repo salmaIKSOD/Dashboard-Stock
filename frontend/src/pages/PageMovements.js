@@ -647,12 +647,12 @@ export default function PageMovements() {
         {/* ══════════════════════════════════════════════════
             AVERTISSEMENT (pas de base sélectionnée)
         ══════════════════════════════════════════════════ */}
-        {!base && !loading && (
+        {/* {!base && !loading && (
           <div className="bg-[rgba(18,166,224,0.04)] border border-[rgba(18,166,224,0.15)] rounded-xl px-5 py-4 text-[#0b7db0] text-sm flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-[#12a6e0] shrink-0 animate-pulse" />
             <span>Sélectionnez une <strong>base SAGE</strong>, une <strong>période</strong> puis cliquez sur <strong>Filtrer</strong>.</span>
           </div>
-        )}
+        )} */}
 
         {/* ══════════════════════════════════════════════════
             KPIs
