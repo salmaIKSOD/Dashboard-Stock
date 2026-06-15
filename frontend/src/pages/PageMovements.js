@@ -647,9 +647,8 @@ export default function PageMovements() {
         {/* ══════════════════════════════════════════════════
             KPIs
         ══════════════════════════════════════════════════ */}
-        {kpis && !loading && (
+        {/* {kpis && !loading && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {/* tu chnage */}
             <KpiCard
                 label="Stock Final Total"
                 value={fmtNum(kpis.totalStockFinal)}
@@ -657,7 +656,6 @@ export default function PageMovements() {
                 color="#c47a00" bgColor="rgba(224,138,0,0.06)" borderColor="rgba(224,138,0,0.18)" iconBg="rgba(224,138,0,0.08)"
                 icon={Boxes}
             />
-            {/* tu change */}
             <KpiCard
                 label="Valeur Permanente"
                 value={fmtNum(kpis.totalValeurPermanente)}
@@ -665,6 +663,45 @@ export default function PageMovements() {
                 color="#0b7db0" bgColor="rgba(18,166,224,0.06)" borderColor="rgba(18,166,224,0.18)" iconBg="rgba(18,166,224,0.08)"
                 icon={TrendingUp}
             />
+            <KpiCard
+              label="Total Entrées"
+              value={fmtNum(kpis.totalE)}
+              sub="unités reçues sur la période"
+              color="#01a82e" bgColor="rgba(1,168,46,0.06)" borderColor="rgba(1,168,46,0.18)" iconBg="rgba(1,168,46,0.08)"
+              icon={PackageCheck}
+            />
+            <KpiCard
+              label="Total Sorties"
+              value={fmtNum(kpis.totalS)}
+              sub="unités expédiées sur la période"
+              color="#e53935" bgColor="rgba(229,57,53,0.06)" borderColor="rgba(229,57,53,0.18)" iconBg="rgba(229,57,53,0.08)"
+              icon={PackageOpen}
+            />
+            <KpiCard
+              label="Articles uniques"
+              value={kpis.nbArticles}
+              sub={`sur ${kpis.nbDepots} dépôt${kpis.nbDepots > 1 ? 's' : ''}`}
+              color="#12a6e0" bgColor="rgba(18,166,224,0.06)" borderColor="rgba(18,166,224,0.18)" iconBg="rgba(18,166,224,0.08)"
+              icon={Boxes}
+            />
+          </div>
+        )} */}
+        {kpis && !loading && (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <KpiCard
+              label="Stock Final Total"
+              value={fmtNum(kpis.totalStockFinal)}
+              sub="unités en stock à la fin de la période"
+              color="#c47a00" bgColor="rgba(224,138,0,0.06)" borderColor="rgba(224,138,0,0.18)" iconBg="rgba(224,138,0,0.08)"
+              icon={Boxes}
+            />
+            {/* <KpiCard
+                label="Valeur Permanente"
+                value={fmtNum(kpis.totalValeurPermanente)}
+                sub="valeur stock permanent"
+                color="#0b7db0" bgColor="rgba(18,166,224,0.06)" borderColor="rgba(18,166,224,0.18)" iconBg="rgba(18,166,224,0.08)"
+                icon={TrendingUp}
+            /> */}
             <KpiCard
               label="Total Entrées"
               value={fmtNum(kpis.totalE)}
