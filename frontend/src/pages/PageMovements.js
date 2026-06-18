@@ -444,16 +444,34 @@ export default function PageMovements() {
   };
 
   /* ── Reset ── */
+  // const handleReset = () => {
+  //   const today = new Date();
+  //   const yyyy  = today.getFullYear();
+  //   const mm    = String(today.getMonth() + 1).padStart(2, '0');
+  //   const dd    = String(today.getDate()).padStart(2, '0');
+  //   setBase(currentFilters.base || '');
+  //   setDateDebut(`${yyyy}-${mm}-01`);
+  //   setDateFin(`${yyyy}-${mm}-${dd}`);
+  //   setArticle(''); setDepot('');
+  //   setMouvData(null); setError(null); setPage(1);
+  // };
   const handleReset = () => {
     const today = new Date();
     const yyyy  = today.getFullYear();
     const mm    = String(today.getMonth() + 1).padStart(2, '0');
     const dd    = String(today.getDate()).padStart(2, '0');
-    setBase(currentFilters.base || '');
+
+    setBase('');
     setDateDebut(`${yyyy}-${mm}-01`);
     setDateFin(`${yyyy}-${mm}-${dd}`);
-    setArticle(''); setDepot('');
-    setMouvData(null); setError(null); setPage(1);
+    setArticle('');
+    setDepot('');
+    setArticleOptions([]);
+    setDepotOptions([]);
+    setMouvData(null);
+    setMouvFilters({ depot: '', article: '' });
+    setError(null);
+    setPage(1);
   };
 
   /* ── Export Excel ── */

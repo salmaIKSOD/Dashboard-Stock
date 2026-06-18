@@ -318,7 +318,6 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
   };
 
   const handleReset = () => {
-    // Dates du mois courant
     const today = new Date();
     const yyyy = today.getFullYear();
     const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -326,15 +325,18 @@ export default function Filters({ onFilter, initialBase = '', initialDateDebut =
     const newDebut = `${yyyy}-${mm}-01`;
     const newFin   = `${yyyy}-${mm}-${dd}`;
 
-    setBase(initialBase);
-    setArticle(''); setDepot(''); setFamille('');
+    setBase('');                    // ← vide la base immédiatement
+    setArticle('');
+    setDepot('');
+    setFamille('');
     setCat1(''); setCat2(''); setCat3(''); setCat4('');
-    setDateDebut(newDebut);   // ← dates fraîches du mois courant
+    setDateDebut(newDebut);
     setDateFin(newFin);
     setArticles([]); setDepots([]); setFamilles([]);
     setCat1List([]); setCat2List([]); setCat3List([]); setCat4List([]);
-    if (initialBase) loadFiltres(initialBase);
-    onFilter(null);   // ← vide KPIs + tableau comme avant
+
+    setCurrentFilters(prev => ({ ...prev, base: null }));  // ← sync contexte
+    onFilter(null);
   };
 
   const gridCols = isMobile
