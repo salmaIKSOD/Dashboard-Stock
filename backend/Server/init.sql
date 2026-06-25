@@ -1,11 +1,9 @@
--- ============================================================
---  INIT.SQL — Script d'initialisation automatique
+--  INIT.SQL  Script d'initialisation automatique
 --  Exécuté UNE SEULE FOIS au premier démarrage de l'application
---  NE PAS modifier les bases SAGE ici — l'encadrant les ajoute
+--  NE PAS modifier les bases SAGE ici l'encadrant les ajoute
 --  lui-même via l'interface Gestion Bases de Données
--- ============================================================
 
--- ── 1. Création de la base Test ──────────────────────────────
+-- 1. Création de la base Test ───────────────────────────────
 IF NOT EXISTS (SELECT 1 FROM sys.databases WHERE name = 'Test')
 BEGIN
     CREATE DATABASE Test;
@@ -15,14 +13,14 @@ GO
 USE Test;
 GO
 
--- ── 2. Schéma stock ──────────────────────────────────────────
+-- 2. Schéma stock ──────────────────────────────────────────
 IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = 'stock')
 BEGIN
     EXEC('CREATE SCHEMA stock');
 END
 GO
 
--- ── 3. Table registre des bases SAGE (vide par défaut) ───────
+-- 3. Table registre des bases SAGE  (nom, label, actif/inactif) 
 IF NOT EXISTS (
     SELECT 1 FROM sys.tables t
     INNER JOIN sys.schemas s ON s.schema_id = t.schema_id
@@ -40,7 +38,7 @@ BEGIN
 END
 GO
 
--- ── 4. Table CacheFiltres ────────────────────────────────────
+-- 4. Table CacheFiltres cache des listes de filtres  (articles, fam, depots , cat N)
 IF NOT EXISTS (
     SELECT 1 FROM sys.tables t
     INNER JOIN sys.schemas s ON s.schema_id = t.schema_id
@@ -65,7 +63,7 @@ BEGIN
 END
 GO
 
--- ── 5. Table StockJournalierCache ────────────────────────────
+-- 5. Table StockJournalierCache cache du stock jour par jour par article/depo ────────────────────────────
 IF NOT EXISTS (
     SELECT 1 FROM sys.tables t
     INNER JOIN sys.schemas s ON s.schema_id = t.schema_id
@@ -120,7 +118,7 @@ BEGIN
 END
 GO
 
--- ── 6. Vue VW_MouvementsJournaliers (vide au départ) ─────────
+-- 6. Vue VW_MouvementsJournaliers vide au depart 
 CREATE OR ALTER VIEW stock.VW_MouvementsJournaliers
 AS
 SELECT
@@ -148,7 +146,7 @@ SELECT
 WHERE 1 = 0;
 GO
 
--- ── 7. Vue VW_StockJoursAvecMvt (vide au départ) ─────────────
+--  7. Vue VW_StockJoursAvecMvt avec mvt vide au départ
 CREATE OR ALTER VIEW stock.VW_StockJoursAvecMvt
 AS
 SELECT
@@ -179,7 +177,7 @@ SELECT
 WHERE 1 = 0;
 GO
 
--- ── 8. SP_RebuildUnifiedViews ────────────────────────────────
+-- 8. SP_RebuildUnifiedViews vues unifiées en UNION de toutes les bases actives 
 CREATE OR ALTER PROCEDURE stock.SP_RebuildUnifiedViews
 AS
 BEGIN
@@ -320,7 +318,7 @@ BEGIN
 END
 GO
 
--- ── 9. SP_RefreshCacheFiltres ────────────────────────────────
+--  9. SP_RefreshCacheFiltres recharge la table de filtre pour toutes les bases actives 
 CREATE OR ALTER PROCEDURE stock.SP_RefreshCacheFiltres
 AS
 BEGIN
@@ -397,7 +395,7 @@ BEGIN
 END
 GO
 
--- ── 10. SP_RefreshStockCache ──────────────────────────────────
+-- 10. SP_RefreshStockCache recharge le cache stock pour toutes les bases actives
 CREATE OR ALTER PROCEDURE stock.SP_RefreshStockCache
 AS
 BEGIN
@@ -446,7 +444,7 @@ BEGIN
 END
 GO
 
--- ── 11. SP_GetBases ──────────────────────────────────────────
+-- 11. SP_GetBases liste les bases actives valides !!!! doivent contenir la table P_DOSSIER 
 CREATE OR ALTER PROCEDURE stock.SP_GetBases
 AS
 BEGIN
@@ -484,7 +482,7 @@ BEGIN
 END
 GO
 
--- ── 12. SP_GetFiltres ─────────────────────────────────────────
+-- 12. SP_GetFiltres retourne les filtres disponibles pour une base donnée
 CREATE OR ALTER PROCEDURE stock.SP_GetFiltres
     @Base           NVARCHAR(128),
     @CL_No1         INT          = NULL,
@@ -535,7 +533,7 @@ BEGIN
 END
 GO
 
--- ── 13. SP_GetMouvements ──────────────────────────────────────
+-- 13. SP_GetMouvements retourne les Mvt de stock filtrés 
 CREATE OR ALTER PROCEDURE stock.SP_GetMouvements
     @Base           NVARCHAR(128),
     @DateDebut      DATE          = NULL,
@@ -583,7 +581,7 @@ BEGIN
 END
 GO
 
--- ── 14. SP_GetStockJournalier ─────────────────────────────────
+-- 14. SP_GetStockJournalier calcule le stock jour par jour, meme sans mouvement 
 CREATE OR ALTER PROCEDURE stock.SP_GetStockJournalier
     @Base           NVARCHAR(128),
     @DateDebut      DATE,
@@ -697,7 +695,7 @@ END
 GO
 
 
--- ── 15. SP_RefreshStockCacheBase ─────────────────────────────
+-- 15. SP_RefreshStockCacheBase recharge le cache par une seule base 
 CREATE OR ALTER PROCEDURE stock.SP_RefreshStockCacheBase
     @BaseName NVARCHAR(128)
 AS
@@ -709,7 +707,7 @@ BEGIN
 
     DECLARE @sql NVARCHAR(MAX);
 
-    -- ── Filtres : articles ────────────────────────────────────
+    -- Filtres : articles 
     SET @sql = N'INSERT INTO Test.stock.CacheFiltres (BaseName, TypeFiltre, Code, Libelle, CL_No1_Parent, FA_Code_Parent)
     SELECT DISTINCT ''' + @BaseName + N''', ''article'', fa.AR_Ref, fa.AR_Design, fa.CL_No1, fa.FA_CodeFamille
     FROM [' + @BaseName + N'].dbo.F_DOCLIGNE dl
@@ -717,7 +715,7 @@ BEGIN
     WHERE dl.DL_MvtStock IN (1, 3);';
     EXEC sp_executesql @sql;
 
-    -- ── Filtres : dépôts ──────────────────────────────────────
+    -- Filtres : dépôts 
     SET @sql = N'INSERT INTO Test.stock.CacheFiltres (BaseName, TypeFiltre, Code, Libelle)
     SELECT DISTINCT ''' + @BaseName + N''', ''depot'', CAST(dp.DE_No AS NVARCHAR(255)), dp.DE_Intitule
     FROM [' + @BaseName + N'].dbo.F_DOCLIGNE dl
@@ -725,7 +723,7 @@ BEGIN
     WHERE dl.DL_MvtStock IN (1, 3);';
     EXEC sp_executesql @sql;
 
-    -- ── Filtres : familles ────────────────────────────────────
+    --  Filtres : familles 
     SET @sql = N'INSERT INTO Test.stock.CacheFiltres (BaseName, TypeFiltre, Code, Libelle)
     SELECT DISTINCT ''' + @BaseName + N''', ''famille'', fa.FA_CodeFamille, fam.FA_Intitule
     FROM [' + @BaseName + N'].dbo.F_DOCLIGNE dl
@@ -734,7 +732,7 @@ BEGIN
     WHERE dl.DL_MvtStock IN (1, 3) AND fa.FA_CodeFamille IS NOT NULL;';
     EXEC sp_executesql @sql;
 
-    -- ── Filtres : cat1 ────────────────────────────────────────
+    --  Filtres : cat1
     SET @sql = N'INSERT INTO Test.stock.CacheFiltres (BaseName, TypeFiltre, Code, Libelle)
     SELECT DISTINCT ''' + @BaseName + N''', ''cat1'', CAST(fa.CL_No1 AS NVARCHAR(255)), cl1.CL_Intitule
     FROM [' + @BaseName + N'].dbo.F_DOCLIGNE dl
@@ -743,7 +741,7 @@ BEGIN
     WHERE dl.DL_MvtStock IN (1, 3) AND fa.CL_No1 IS NOT NULL;';
     EXEC sp_executesql @sql;
 
-    -- ── Filtres : cat2 ────────────────────────────────────────
+    --  Filtres : cat2 
     SET @sql = N'INSERT INTO Test.stock.CacheFiltres (BaseName, TypeFiltre, Code, Libelle, CL_No1_Parent)
     SELECT DISTINCT ''' + @BaseName + N''', ''cat2'', CAST(fa.CL_No2 AS NVARCHAR(255)), cl2.CL_Intitule, fa.CL_No1
     FROM [' + @BaseName + N'].dbo.F_DOCLIGNE dl
@@ -752,7 +750,7 @@ BEGIN
     WHERE dl.DL_MvtStock IN (1, 3) AND fa.CL_No2 IS NOT NULL;';
     EXEC sp_executesql @sql;
 
-    -- ── Filtres : cat3 ────────────────────────────────────────
+    --  Filtres : cat3 
     SET @sql = N'INSERT INTO Test.stock.CacheFiltres (BaseName, TypeFiltre, Code, Libelle, CL_No1_Parent)
     SELECT DISTINCT ''' + @BaseName + N''', ''cat3'', CAST(fa.CL_No3 AS NVARCHAR(255)), cl3.CL_Intitule, fa.CL_No1
     FROM [' + @BaseName + N'].dbo.F_DOCLIGNE dl
@@ -761,7 +759,7 @@ BEGIN
     WHERE dl.DL_MvtStock IN (1, 3) AND fa.CL_No3 IS NOT NULL;';
     EXEC sp_executesql @sql;
 
-    -- ── Filtres : cat4 ────────────────────────────────────────
+    -- Filtres : cat4
     SET @sql = N'INSERT INTO Test.stock.CacheFiltres (BaseName, TypeFiltre, Code, Libelle, CL_No1_Parent)
     SELECT DISTINCT ''' + @BaseName + N''', ''cat4'', CAST(fa.CL_No4 AS NVARCHAR(255)), cl4.CL_Intitule, fa.CL_No1
     FROM [' + @BaseName + N'].dbo.F_DOCLIGNE dl
@@ -770,10 +768,10 @@ BEGIN
     WHERE dl.DL_MvtStock IN (1, 3) AND fa.CL_No4 IS NOT NULL;';
     EXEC sp_executesql @sql;
 
-    -- ── Stock journalier : UNIQUEMENT les jours AVEC mouvement ─
+    -- Stock journalier : UNIQUEMENT!! les jours AVEC mouvement 
     --    Les jours SANS mouvement sont générés à la LECTURE par
-    --    SP_GetStockJournalier (point 14). Ne PAS les matérialiser
-    --    ici — c'est ce qui causait le timeout.
+    --    SP_GetStockJournalier titre 14  Ne PAS les matérialiser
+    --    ici c'est ce qui causait le timeout
     SET @sql = N'
     INSERT INTO Test.stock.StockJournalierCache
     (BaseName, DateJour, AR_Ref, AR_Design,
@@ -800,7 +798,7 @@ BEGIN
 END
 GO
 
--- ── 16. SP_AddBase ────────────────────────────────────────────
+-- 16. SP_AddBase l'ajout d'une nv base sage avec tt qui va avec elle 
 CREATE OR ALTER PROCEDURE stock.SP_AddBase
     @BaseName   NVARCHAR(128),
     @BaseLabel  NVARCHAR(255)
@@ -832,7 +830,7 @@ BEGIN
     ELSE
         UPDATE stock.SAGE_Bases SET IsActive = 1, BaseLabel = @BaseLabel WHERE BaseName = @BaseName;
 
-    -- ── Vue VW_StockJoursAvecMvt dans la base SAGE ────────────
+    --  Vue VW_StockJoursAvecMvt dans la base SAGE
     DECLARE @sql NVARCHAR(MAX);
     SET @sql = N'USE [' + @BaseName + N']; EXEC(''
     CREATE OR ALTER VIEW dbo.VW_StockJoursAvecMvt AS
@@ -894,7 +892,7 @@ BEGIN
     '')';
     EXEC sp_executesql @sql;
 
-    -- ── Index dans la base SAGE (création automatique) ────────
+    -- Index dans la base SAGE (création automatique)
     SET @sql = N'USE [' + @BaseName + N'];
     IF EXISTS (SELECT 1 FROM sys.indexes WHERE name=''IX_DOCLIGNE_PERF'' AND object_id=OBJECT_ID(''dbo.F_DOCLIGNE''))
         DROP INDEX IX_DOCLIGNE_PERF ON dbo.F_DOCLIGNE;
@@ -915,14 +913,14 @@ BEGIN
     EXEC sp_executesql @sql;
 
     -- Le remplissage du cache est géré par le backend Node.js
-    -- (appel de SP_RefreshStockCacheBase après l'ajout)
+    -- appel de SP_RefreshStockCacheBase après l'ajout
     EXEC stock.SP_RebuildUnifiedViews;
 
     SELECT 'OK' AS Statut, @BaseName AS Base, 'Base ajoutée avec succès' AS Message;
 END
 GO
 
--- ── 17. SP_RemoveBase ─────────────────────────────────────────
+--  17. SP_RemoveBase  désactiver une base sans la supprimer 
 CREATE OR ALTER PROCEDURE stock.SP_RemoveBase
     @BaseName NVARCHAR(128)
 AS
@@ -933,7 +931,7 @@ BEGIN
 END
 GO
 
--- ── 18. SP_RefreshSiNecessaire ────────────────────────────────
+--  18. SP_RefreshSiNecessaire refraichait le cache auto 
 CREATE OR ALTER PROCEDURE stock.SP_RefreshSiNecessaire
     @HeuresMax INT = 8
 AS
@@ -956,7 +954,7 @@ BEGIN
 END
 GO
 
--- ── 19. SP_VW_Dimensions ──────────────────────────────────────
+-- 19. SP_VW_Dimensions
 CREATE OR ALTER VIEW stock.VW_Dimensions
 AS
 SELECT

@@ -64,12 +64,13 @@ async function initDatabase() {
             'SP_GetBases','SP_GetFiltres','SP_GetMouvements',
             'SP_GetStockJournalier','SP_AddBase','SP_RemoveBase',
             'SP_RefreshCacheFiltres','SP_RefreshStockCache',
-            'SP_RebuildUnifiedViews','SP_RefreshSiNecessaire'
+            'SP_RebuildUnifiedViews','SP_RefreshSiNecessaire',
+            'SP_RefreshStockCacheBase'
           )
       `);
       const nbSP = spCheck.recordset[0].nb;
 
-      if (nbSP >= 10) {
+      if (nbSP >= 11) {
         console.log('✅ Base Test déjà initialisée — démarrage normal');
         await masterPool.close();
         return;
